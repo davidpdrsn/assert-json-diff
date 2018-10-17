@@ -1,7 +1,5 @@
 # assert-json-diff
 
-Current version: 0.1.0
-
 This crate includes an assert macro for comparing two JSON values. It is designed to give much
 more helpful error messages than the standard [`assert_eq!`]. It basically does a diff of the
 two objects and tells you the exact differences. This is useful when asserting that two large
@@ -160,3 +158,5 @@ fn some_other_test() {
 
 The version that includes `actual:` and `expected:` is preferred because it makes it very clear
 which is which and there [which can contain additional data](#additional-data)
+
+License: MIT
