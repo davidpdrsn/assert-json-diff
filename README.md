@@ -14,16 +14,22 @@ It uses the [`serde_json::Value`] type to represent JSON.
 [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
 [`assert_eq!`]: https://doc.rust-lang.org/std/macro.assert_eq.html
 
+## Install
+
+```toml
+[dependencies]
+assert-json-diff = "0.1.0"
+```
+
 ### Example
 
-```rust
+```rust,should_panic
 #[macro_use]
 extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
-// probably with #[test] attribute
-fn some_test() {
+fn main() {
     let a = json!({
         "data": {
             "users": [
@@ -93,8 +99,7 @@ extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
-// probably with #[test] attribute
-fn some_test() {
+fn main() {
     assert_json_eq!(
         actual: json!({
             "a": { "b": 1 },
@@ -108,14 +113,13 @@ fn some_test() {
 
 However `expected` cannot contain additional data so this test fails:
 
-```rust
+```rust,should_panic
 #[macro_use]
 extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
-// probably with #[test] attribute
-fn some_test() {
+fn main() {
     assert_json_eq!(
         actual: json!({
             "a": {},
@@ -143,16 +147,7 @@ extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
-// probably with #[test] attribute
-fn some_test() {
-    assert_json_eq!(
-        actual: json!(true),
-        expected: json!(true)
-    )
-}
-
-// probably with #[test] attribute
-fn some_other_test() {
+fn main() {
     assert_json_eq!(
         json!(true),
         json!(true)

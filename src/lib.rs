@@ -180,7 +180,8 @@ extern crate serde_json;
 
 use serde::{Serialize, Serializer};
 use serde_json::Value;
-use std::{default::Default, fmt};
+use std::default::Default;
+use std::fmt;
 
 mod core_ext;
 use core_ext::Indent;
@@ -489,7 +490,8 @@ impl MatchErrors {
                     ErrorType::MissingPath(path) => {
                         format!(r#"json atom at path "{}" is missing from expected"#, path)
                     }
-                }).collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
             Err(messages.join("\n\n"))
         }
     }
