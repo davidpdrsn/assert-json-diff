@@ -156,6 +156,6 @@ fn main() {
 ```
 
 The version that includes `actual:` and `expected:` is preferred because it makes it very clear
-which is which and there [which can contain additional data](#additional-data)
+which is which and [which can contain additional data](#additional-data)
 
 License: MIT
