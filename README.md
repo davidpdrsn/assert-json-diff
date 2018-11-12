@@ -1,5 +1,9 @@
 # assert-json-diff
 
+[![Build Status](https://travis-ci.org/davidpdrsn/assert-json-diff.svg?branch=master)](https://travis-ci.org/davidpdrsn/assert-json-diff)
+[![Crates.io](https://img.shields.io/crates/v/assert-json-diff.svg)](https://crates.io/crates/assert-json-diff)
+[![Documentation](https://docs.rs/assert-json-diff/badge.svg)](https://docs.rs/assert-json-diff/)
+
 This crate includes an assert macro for comparing two JSON values. It is designed to give much
 more helpful error messages than the standard [`assert_eq!`]. It basically does a diff of the
 two objects and tells you the exact differences. This is useful when asserting that two large
