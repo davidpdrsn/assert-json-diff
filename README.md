@@ -1,10 +1,8 @@
+[![Build Status](https://travis-ci.org/davidpdrsn/assert-json-diff.svg?branch=master)](https://travis-ci.org/davidpdrsn/assert-json-diff)
+
 # assert-json-diff
 
-[![Build Status](https://travis-ci.org/davidpdrsn/assert-json-diff.svg?branch=master)](https://travis-ci.org/davidpdrsn/assert-json-diff)
-[![Crates.io](https://img.shields.io/crates/v/assert-json-diff.svg)](https://crates.io/crates/assert-json-diff)
-[![Documentation](https://docs.rs/assert-json-diff/badge.svg)](https://docs.rs/assert-json-diff/)
-
-This crate includes an assert macro for comparing two JSON values. It is designed to give much
+This crate includes macros for comparing two JSON values. It is designed to give much
 more helpful error messages than the standard [`assert_eq!`]. It basically does a diff of the
 two objects and tells you the exact differences. This is useful when asserting that two large
 JSON objects are the same.
@@ -14,16 +12,19 @@ It uses the [`serde_json::Value`] type to represent JSON.
 [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
 [`assert_eq!`]: https://doc.rust-lang.org/std/macro.assert_eq.html
 
-## Install
+### Install
 
 ```toml
 [dependencies]
 assert-json-diff = "0.1.0"
 ```
 
-### Example
+### Partial matching
 
-```rust,should_panic
+If you want to assert that one JSON value is "included" in another use
+[`assert_json_include`](macro.assert_json_include.html):
+
+```rust
 #[macro_use]
 extern crate assert_json_diff;
 #[macro_use]
@@ -68,7 +69,7 @@ fn main() {
         }
     });
 
-    assert_json_eq!(actual: a, expected: b)
+    assert_json_include!(actual: a, expected: b)
 }
 ```
 
@@ -88,9 +89,7 @@ json atoms at path ".data.users[1].id" are not equal:
         24
 ```
 
-### Additional data
-
-It allows extra data in `actual` but not in `expected`. That is so you can verify just a part
+[`assert_json_include`](macro.assert_json_include.html) allows extra data in `actual` but not in `expected`. That is so you can verify just a part
 of the JSON without having to specify the whole thing. For example this test passes:
 
 ```rust
@@ -100,7 +99,7 @@ extern crate assert_json_diff;
 extern crate serde_json;
 
 fn main() {
-    assert_json_eq!(
+    assert_json_include!(
         actual: json!({
             "a": { "b": 1 },
         }),
@@ -113,14 +112,14 @@ fn main() {
 
 However `expected` cannot contain additional data so this test fails:
 
-```rust,should_panic
+```rust
 #[macro_use]
 extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
 fn main() {
-    assert_json_eq!(
+    assert_json_include!(
         actual: json!({
             "a": {},
         }),
@@ -137,9 +136,9 @@ That will print
 json atom at path ".a.b" is missing from expected
 ```
 
-### The macro
+### Strict matching
 
-The `assert_json_eq!` macro can be called with or without typing `actual:` and `expected:`
+If you want to ensure two JSON values are *exactly* the same, use [`assert_json_eq`](macro.assert_json_eq.html).
 
 ```rust
 #[macro_use]
@@ -149,13 +148,16 @@ extern crate serde_json;
 
 fn main() {
     assert_json_eq!(
-        json!(true),
-        json!(true)
+        json!({ "a": { "b": 1 } }),
+        json!({ "a": {} })
     )
 }
 ```
 
-The version that includes `actual:` and `expected:` is preferred because it makes it very clear
-which is which and [which can contain additional data](#additional-data)
+This will panic with the error message:
+
+```
+json atom at path ".a.b" is missing from rhs
+```
 
 License: MIT

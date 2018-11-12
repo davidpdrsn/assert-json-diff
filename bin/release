@@ -18,6 +18,9 @@ echo "✔ code formatting looks good!"
 cargo check
 echo "✔ types look good"
 
+cargo readme > README.md
+echo "✔ README.md compiled"
+
 cargo test > /dev/null
 echo "✔ tests are passing"
 

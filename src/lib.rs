@@ -1,4 +1,4 @@
-//! This crate includes an assert macro for comparing two JSON values. It is designed to give much
+//! This crate includes macros for comparing two JSON values. It is designed to give much
 //! more helpful error messages than the standard [`assert_eq!`]. It basically does a diff of the
 //! two objects and tells you the exact differences. This is useful when asserting that two large
 //! JSON objects are the same.
@@ -8,17 +8,25 @@
 //! [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
 //! [`assert_eq!`]: https://doc.rust-lang.org/std/macro.assert_eq.html
 //!
-//! ## Example
+//! ## Install
+//!
+//! ```toml
+//! [dependencies]
+//! assert-json-diff = "0.1.0"
+//! ```
+//!
+//! ## Partial matching
+//!
+//! If you want to assert that one JSON value is "included" in another use
+//! [`assert_json_include`](macro.assert_json_include.html):
 //!
 //! ```should_panic
 //! #[macro_use]
 //! extern crate assert_json_diff;
 //! #[macro_use]
 //! extern crate serde_json;
-//! # fn main() { some_test() }
 //!
-//! // probably with #[test] attribute
-//! fn some_test() {
+//! fn main() {
 //!     let a = json!({
 //!         "data": {
 //!             "users": [
@@ -57,7 +65,7 @@
 //!         }
 //!     });
 //!
-//!     assert_json_eq!(actual: a, expected: b)
+//!     assert_json_include!(actual: a, expected: b)
 //! }
 //! ```
 //!
@@ -77,9 +85,7 @@
 //!         24
 //! ```
 //!
-//! ## Additional data
-//!
-//! It allows extra data in `actual` but not in `expected`. That is so you can verify just a part
+//! [`assert_json_include`](macro.assert_json_include.html) allows extra data in `actual` but not in `expected`. That is so you can verify just a part
 //! of the JSON without having to specify the whole thing. For example this test passes:
 //!
 //! ```
@@ -87,11 +93,9 @@
 //! extern crate assert_json_diff;
 //! #[macro_use]
 //! extern crate serde_json;
-//! # fn main() { some_test() }
 //!
-//! // probably with #[test] attribute
-//! fn some_test() {
-//!     assert_json_eq!(
+//! fn main() {
+//!     assert_json_include!(
 //!         actual: json!({
 //!             "a": { "b": 1 },
 //!         }),
@@ -109,11 +113,9 @@
 //! extern crate assert_json_diff;
 //! #[macro_use]
 //! extern crate serde_json;
-//! # fn main() { some_test() }
 //!
-//! // probably with #[test] attribute
-//! fn some_test() {
-//!     assert_json_eq!(
+//! fn main() {
+//!     assert_json_include!(
 //!         actual: json!({
 //!             "a": {},
 //!         }),
@@ -130,36 +132,29 @@
 //! json atom at path ".a.b" is missing from expected
 //! ```
 //!
-//! ## The macro
+//! ## Exact matching
 //!
-//! The `assert_json_eq!` macro can be called with or without typing `actual:` and `expected:`
+//! If you want to ensure two JSON values are *exactly* the same, use [`assert_json_eq`](macro.assert_json_eq.html).
 //!
-//! ```
+//! ```rust,should_panic
 //! #[macro_use]
 //! extern crate assert_json_diff;
 //! #[macro_use]
 //! extern crate serde_json;
-//! # fn main() { some_test() }
 //!
-//! // probably with #[test] attribute
-//! fn some_test() {
+//! fn main() {
 //!     assert_json_eq!(
-//!         actual: json!(true),
-//!         expected: json!(true)
-//!     )
-//! }
-//!
-//! // probably with #[test] attribute
-//! fn some_other_test() {
-//!     assert_json_eq!(
-//!         json!(true),
-//!         json!(true)
+//!         json!({ "a": { "b": 1 } }),
+//!         json!({ "a": {} })
 //!     )
 //! }
 //! ```
 //!
-//! The version that includes `actual:` and `expected:` is preferred because it makes it very clear
-//! which is which and there [which can contain additional data](#additional-data)
+//! This will panic with the error message:
+//!
+//! ```text
+//! json atom at path ".a.b" is missing from rhs
+//! ```
 
 #![deny(
     missing_docs,
@@ -176,52 +171,110 @@
 #![doc(html_root_url = "https://docs.rs/assert-json-diff/0.1.0")]
 
 extern crate serde;
+#[allow(unused_imports)]
+#[macro_use]
 extern crate serde_json;
 
 use serde::{Serialize, Serializer};
 use serde_json::Value;
+use std::collections::HashSet;
 use std::default::Default;
 use std::fmt;
 
 mod core_ext;
-use core_ext::Indent;
+use core_ext::{Indent, Indexes};
 
-/// The macro used to compare two JSON values.
+/// The macro used to compare two JSON values for an inclusive match.
+///
+/// It allows `actual` to contain additional data. If you want an exact match use
+/// [`assert_json_eq`](macro.assert_json_eq.html) instead.
+///
+/// See [crate documentation](index.html) for examples.
+#[macro_export]
+macro_rules! assert_json_include {
+    (actual: $actual:expr, expected: $expected:expr) => {{
+        use $crate::{Actual, Comparison, Expected};
+        let actual: serde_json::Value = $actual;
+        let expected: serde_json::Value = $expected;
+        let comparison = Comparison::Include(Actual::new(actual), Expected::new(expected));
+        if let Err(error) = $crate::assert_json_no_panic(comparison) {
+            panic!("\n\n{}\n\n", error);
+        }
+    }};
+    (expected: $expected:expr, actual: $actual:expr) => {{
+        $crate::assert_json_include!(actual: $actual, expected: $expected)
+    }};
+}
+
+/// The macro used to compare two JSON values for an exact match.
+///
+/// If you want an inclusive match use [`assert_json_include`](macro.assert_json_include.html) instead.
 ///
 /// See [crate documentation](index.html) for examples.
 #[macro_export]
 macro_rules! assert_json_eq {
-    (actual: $actual:expr, expected: $expected:expr) => {{
-        use $crate::{Actual, Expected};
-        $crate::assert_json_eq(Actual($actual), Expected($expected))
-    }};
-    ($actual:expr, $expected:expr) => {{
-        use $crate::{Actual, Expected};
-        $crate::assert_json_eq(Actual($actual), Expected($expected))
+    ($lhs:expr, $rhs:expr) => {{
+        use $crate::{Actual, Comparison, Expected};
+        let lhs: serde_json::Value = $lhs;
+        let rhs: serde_json::Value = $rhs;
+        let comparison = Comparison::Exact(lhs, rhs);
+        if let Err(error) = $crate::assert_json_no_panic(comparison) {
+            panic!("\n\n{}\n\n", error);
+        }
     }};
 }
 
+/// Perform the matching and return the error text rather than panicing.
+///
+/// The [macros](index.html#macros) call this function and panics if the result is an `Err(_)`
 #[doc(hidden)]
-#[macro_export]
-macro_rules! assert_json_eq_no_panic {
-    (actual: $actual:expr, expected: $expected:expr) => {{
-        use $crate::{Actual, Expected};
-        $crate::assert_json_eq_no_panic(Actual($actual), Expected($expected))
-    }};
-    ($actual:expr, $expected:expr) => {{
-        use $crate::{Actual, Expected};
-        $crate::assert_json_eq_no_panic(Actual($actual), Expected($expected))
-    }};
+pub fn assert_json_no_panic(comparison: Comparison) -> Result<(), String> {
+    let mut errors = MatchErrors::default();
+    match comparison {
+        Comparison::Include(actual, expected) => {
+            partial_match_at_path(actual, expected, Path::Root, &mut errors);
+        }
+
+        Comparison::Exact(lhs, rhs) => {
+            exact_match_at_path(lhs, rhs, Path::Root, &mut errors);
+        }
+    }
+    errors.to_output()
 }
 
+/// The type of comparison you want to make.
+///
+/// The [macros](index.html#macros) use this type, but you shouldn't have to use it explicitly.
+#[doc(hidden)]
+#[derive(Debug)]
+pub enum Comparison {
+    /// An inclusive match. Allows additional data in actual, but not in expected.
+    Include(Actual, Expected),
+
+    /// An exact match.
+    Exact(Value, Value),
+}
+
+/// A wrapper for the actual value in a match.
+///
+/// The purpose of this wrapper is to not mix up the actual and expected values.
 #[doc(hidden)]
 #[derive(Clone, Debug)]
-pub struct Actual(pub Value);
+pub struct Actual(Value);
 
 impl std::ops::Deref for Actual {
     type Target = Value;
     fn deref(&self) -> &Value {
         &self.0
+    }
+}
+
+impl Actual {
+    /// Create a new value from a [`serde_json::Value`].
+    ///
+    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    pub fn new(value: Value) -> Self {
+        Actual(value)
     }
 }
 
@@ -240,9 +293,21 @@ impl From<Value> for Actual {
     }
 }
 
+/// A wrapper for the expected value in a match.
+///
+/// The purpose of this wrapper is to not mix up the actual and expected values.
 #[doc(hidden)]
 #[derive(Clone, Debug)]
-pub struct Expected(pub Value);
+pub struct Expected(Value);
+
+impl Expected {
+    /// Create a new value from a [`serde_json::Value`].
+    ///
+    /// [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
+    pub fn new(value: Value) -> Self {
+        Expected(value)
+    }
+}
 
 impl std::ops::Deref for Expected {
     type Target = Value;
@@ -266,21 +331,12 @@ impl From<Value> for Expected {
     }
 }
 
-#[doc(hidden)]
-pub fn assert_json_eq(actual: Actual, expected: Expected) {
-    if let Err(error) = assert_json_eq_no_panic(actual, expected) {
-        panic!("\n\n{}\n\n", error.indent(4));
-    }
+enum Either<A, B> {
+    Left(A),
+    Right(B),
 }
 
-#[doc(hidden)]
-pub fn assert_json_eq_no_panic(actual: Actual, expected: Expected) -> Result<(), String> {
-    let mut errors = MatchErrors::default();
-    match_at_path(actual, expected, Path::Root, &mut errors);
-    errors.to_output()
-}
-
-fn match_at_path(actual: Actual, expected: Expected, path: Path, errors: &mut MatchErrors) {
+fn partial_match_at_path(actual: Actual, expected: Expected, path: Path, errors: &mut MatchErrors) {
     if let Some(expected) = expected.as_object() {
         let keys = expected.keys();
         match_with_keys(keys, &actual, expected, path, errors);
@@ -288,13 +344,16 @@ fn match_at_path(actual: Actual, expected: Expected, path: Path, errors: &mut Ma
         let keys = if expected.is_empty() {
             vec![]
         } else {
-            (0..=expected.len() - 1).collect::<Vec<_>>()
+            expected.indexes()
         };
 
         match_with_keys(keys.iter(), &actual, expected, path, errors);
     } else {
         if expected.0 != actual.0 {
-            errors.push(ErrorType::NotEq(actual.clone(), expected.clone(), path));
+            errors.push(ErrorType::NotEq(
+                Either::Left((actual.clone(), expected.clone())),
+                path,
+            ));
         }
     }
 }
@@ -317,7 +376,7 @@ fn match_with_keys<
     for key in keys {
         match (expected.get(key), actual.get(key)) {
             (Some(expected), Some(actual)) => {
-                match_at_path(
+                partial_match_at_path(
                     actual.clone().into(),
                     expected.clone().into(),
                     path.dot(key),
@@ -326,10 +385,81 @@ fn match_with_keys<
             }
 
             (Some(_), None) => {
-                errors.push(ErrorType::MissingPath(path.dot(key)));
+                errors.push(ErrorType::MissingPath(Either::Left(path.dot(key))));
             }
 
             (None, _) => unreachable!(),
+        }
+    }
+}
+
+fn exact_match_at_path(lhs: Value, rhs: Value, path: Path, errors: &mut MatchErrors) {
+    if let (Some(lhs), Some(rhs)) = (lhs.as_object(), rhs.as_object()) {
+        let keys = lhs
+            .keys()
+            .chain(rhs.keys())
+            .map(|s| s.to_string())
+            .collect::<HashSet<String>>();
+
+        exact_match_with_keys(keys.iter(), lhs, rhs, path, errors);
+    } else if let (Some(lhs), Some(rhs)) = (lhs.as_array(), rhs.as_array()) {
+        let lhs_keys = lhs.indexes();
+        let rhs_keys = rhs.indexes();
+        let keys = lhs_keys
+            .iter()
+            .chain(rhs_keys.iter())
+            .map(|s| s.clone())
+            .collect::<HashSet<usize>>();
+
+        exact_match_with_keys(keys.iter(), lhs, rhs, path, errors);
+    } else {
+        if lhs != rhs {
+            errors.push(ErrorType::NotEq(
+                Either::Right((lhs.clone(), rhs.clone())),
+                path,
+            ));
+        }
+    }
+}
+
+fn exact_match_with_keys<
+    Key: Copy,
+    Keys: Iterator<Item = Key>,
+    Path: Dot<Key>,
+    ValueCollection: Collection<Key, Item = Value>,
+>(
+    keys: Keys,
+    lhs: &ValueCollection,
+    rhs: &ValueCollection,
+    path: Path,
+    errors: &mut MatchErrors,
+) {
+    for key in keys {
+        match (lhs.get(key), rhs.get(key)) {
+            (Some(lhs), Some(rhs)) => {
+                exact_match_at_path(
+                    lhs.clone().into(),
+                    rhs.clone().into(),
+                    path.dot(key),
+                    errors,
+                );
+            }
+
+            (Some(_), None) => {
+                errors.push(ErrorType::MissingPath(Either::Right((
+                    path.dot(key),
+                    SideWithoutPath::Rhs,
+                ))));
+            }
+
+            (None, Some(_)) => {
+                errors.push(ErrorType::MissingPath(Either::Right((
+                    path.dot(key),
+                    SideWithoutPath::Lhs,
+                ))));
+            }
+
+            (None, None) => unreachable!(),
         }
     }
 }
@@ -473,7 +603,7 @@ impl MatchErrors {
                 .errors
                 .iter()
                 .map(|error| match error {
-                    ErrorType::NotEq(actual, expected, path) => format!(
+                    ErrorType::NotEq(Either::Left((actual, expected)), path) => format!(
                         r#"json atoms at path "{}" are not equal:
     expected:
 {}
@@ -487,8 +617,29 @@ impl MatchErrors {
                             .expect("failed to pretty print JSON")
                             .indent(8),
                     ),
-                    ErrorType::MissingPath(path) => {
+
+                    ErrorType::NotEq(Either::Right((lhs, rhs)), path) => format!(
+                        r#"json atoms at path "{}" are not equal:
+    lhs:
+{}
+    rhs:
+{}"#,
+                        path,
+                        serde_json::to_string_pretty(lhs)
+                            .expect("failed to pretty print JSON")
+                            .indent(8),
+                        serde_json::to_string_pretty(rhs)
+                            .expect("failed to pretty print JSON")
+                            .indent(8),
+                    ),
+                    ErrorType::MissingPath(Either::Left(path)) => {
                         format!(r#"json atom at path "{}" is missing from expected"#, path)
+                    }
+                    ErrorType::MissingPath(Either::Right((path, SideWithoutPath::Lhs))) => {
+                        format!(r#"json atom at path "{}" is missing from lhs"#, path)
+                    }
+                    ErrorType::MissingPath(Either::Right((path, SideWithoutPath::Rhs))) => {
+                        format!(r#"json atom at path "{}" is missing from rhs"#, path)
                     }
                 })
                 .collect::<Vec<_>>();
@@ -502,6 +653,329 @@ impl MatchErrors {
 }
 
 enum ErrorType {
-    NotEq(Actual, Expected, Path),
-    MissingPath(Path),
+    NotEq(Either<(Actual, Expected), (Value, Value)>, Path),
+    MissingPath(Either<Path, (Path, SideWithoutPath)>),
+}
+
+enum SideWithoutPath {
+    Lhs,
+    Rhs,
+}
+
+#[cfg(test)]
+mod tests {
+    #[macro_use]
+    use super::*;
+
+    #[test]
+    fn boolean_root() {
+        let result = test_partial_match(Actual(json!(true)), Expected(json!(true)));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!(false)), Expected(json!(false)));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!(false)), Expected(json!(true)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        true
+    actual:
+        false"#),
+        );
+
+        let result = test_partial_match(Actual(json!(true)), Expected(json!(false)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        false
+    actual:
+        true"#),
+        );
+    }
+
+    #[test]
+    fn string_root() {
+        let result = test_partial_match(Actual(json!("true")), Expected(json!("true")));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!("false")), Expected(json!("false")));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!("false")), Expected(json!("true")));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        "true"
+    actual:
+        "false""#),
+        );
+
+        let result = test_partial_match(Actual(json!("true")), Expected(json!("false")));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        "false"
+    actual:
+        "true""#),
+        );
+    }
+
+    #[test]
+    fn number_root() {
+        let result = test_partial_match(Actual(json!(1)), Expected(json!(1)));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!(0)), Expected(json!(0)));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!(0)), Expected(json!(1)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        1
+    actual:
+        0"#),
+        );
+
+        let result = test_partial_match(Actual(json!(1)), Expected(json!(0)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        0
+    actual:
+        1"#),
+        );
+    }
+
+    #[test]
+    fn null_root() {
+        let result = test_partial_match(Actual(json!(null)), Expected(json!(null)));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!(null)), Expected(json!(1)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        1
+    actual:
+        null"#),
+        );
+
+        let result = test_partial_match(Actual(json!(1)), Expected(json!(null)));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    expected:
+        null
+    actual:
+        1"#),
+        );
+    }
+
+    #[test]
+    fn into_object() {
+        let result =
+            test_partial_match(Actual(json!({ "a": true })), Expected(json!({ "a": true })));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(
+            Actual(json!({ "a": false })),
+            Expected(json!({ "a": true })),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path ".a" are not equal:
+    expected:
+        true
+    actual:
+        false"#),
+        );
+
+        let result = test_partial_match(
+            Actual(json!({ "a": { "b": true } })),
+            Expected(json!({ "a": { "b": true } })),
+        );
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(
+            Actual(json!({ "a": true })),
+            Expected(json!({ "a": { "b": true } })),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a.b" is missing from expected"#),
+        );
+
+        let result = test_partial_match(
+            Actual(json!({ "a": { "b": true } })),
+            Expected(json!({ "a": true })),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path ".a" are not equal:
+    expected:
+        true
+    actual:
+        {
+          "b": true
+        }"#),
+        );
+    }
+
+    #[test]
+    fn into_array() {
+        let result = test_partial_match(Actual(json!([1])), Expected(json!([1])));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(Actual(json!([2])), Expected(json!([1])));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "[0]" are not equal:
+    expected:
+        1
+    actual:
+        2"#),
+        );
+
+        let result = test_partial_match(Actual(json!([1, 2, 4])), Expected(json!([1, 2, 3])));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "[2]" are not equal:
+    expected:
+        3
+    actual:
+        4"#),
+        );
+
+        let result = test_partial_match(
+            Actual(json!({ "a": [1, 2, 3]})),
+            Expected(json!({ "a": [1, 2, 4]})),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path ".a[2]" are not equal:
+    expected:
+        4
+    actual:
+        3"#),
+        );
+
+        let result = test_partial_match(
+            Actual(json!({ "a": [1, 2, 3]})),
+            Expected(json!({ "a": [1, 2]})),
+        );
+        assert_output_eq(result, Ok(()));
+
+        let result = test_partial_match(
+            Actual(json!({ "a": [1, 2]})),
+            Expected(json!({ "a": [1, 2, 3]})),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a[2]" is missing from expected"#),
+        );
+    }
+
+    #[test]
+    fn exact_matching() {
+        let result = test_exact_match(json!(true), json!(true));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_exact_match(json!("s"), json!("s"));
+        assert_output_eq(result, Ok(()));
+
+        let result = test_exact_match(json!("a"), json!("b"));
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path "(root)" are not equal:
+    lhs:
+        "a"
+    rhs:
+        "b""#),
+        );
+
+        let result = test_exact_match(json!({ "a": {} }), json!({ "a": { "b": true }}));
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a.b" is missing from lhs"#),
+        );
+
+        let result = test_exact_match(
+            json!({ "a": [1, { "b": 2 }] }),
+            json!({ "a": [1, { "b": 3 }] }),
+        );
+        assert_output_eq(
+            result,
+            Err(r#"json atoms at path ".a[1].b" are not equal:
+    lhs:
+        2
+    rhs:
+        3"#),
+        );
+    }
+
+    #[test]
+    fn exact_match_output_message() {
+        let result = test_exact_match(json!({ "a": { "b": 1 } }), json!({ "a": {} }));
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a.b" is missing from rhs"#),
+        );
+
+        let result = test_exact_match(json!({ "a": {} }), json!({ "a": { "b": 1} }));
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a.b" is missing from lhs"#),
+        );
+    }
+
+    fn assert_output_eq(actual: Result<(), String>, expected: Result<(), &str>) {
+        match (actual, expected) {
+            (Ok(()), Ok(())) => return,
+
+            (Err(actual_error), Ok(())) => {
+                println!("Did not expect error, but got");
+                println!("{}", actual_error);
+            }
+
+            (Ok(()), Err(expected_error)) => {
+                let expected_error = expected_error.to_string();
+                println!("Expected error, but did not get one. Expected error:");
+                println!("{}", expected_error);
+            }
+
+            (Err(actual_error), Err(expected_error)) => {
+                let expected_error = expected_error.to_string();
+                if actual_error == expected_error {
+                    return;
+                } else {
+                    println!("Errors didn't match");
+                    println!("Actual:");
+                    println!("{}", actual_error);
+                    println!("Expected:");
+                    println!("{}", expected_error);
+                }
+            }
+        }
+
+        panic!("assertion error, see stdout");
+    }
+
+    fn test_partial_match(actual: Actual, expected: Expected) -> Result<(), String> {
+        let comparison = Comparison::Include(actual, expected);
+        assert_json_no_panic(comparison)
+    }
+
+    fn test_exact_match(lhs: Value, rhs: Value) -> Result<(), String> {
+        let comparison = Comparison::Exact(lhs, rhs);
+        assert_json_no_panic(comparison)
+    }
 }

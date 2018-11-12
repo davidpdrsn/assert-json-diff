@@ -8,11 +8,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-N/A
+- Add `assert_json_include`. It does partial matching the same way the old `assert_json_eq` did.
 
 ### Changed
 
-N/A
+- Change `assert_json_eq` do exact matching. If the two values are not exactly the same, it'll panic.
 
 ### Removed
 
