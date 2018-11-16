@@ -16,7 +16,7 @@ It uses the [`serde_json::Value`] type to represent JSON.
 
 ```toml
 [dependencies]
-assert-json-diff = "0.1.0"
+assert-json-diff = "0.2.0"
 ```
 
 ### Partial matching
@@ -136,7 +136,7 @@ That will print
 json atom at path ".a.b" is missing from expected
 ```
 
-### Strict matching
+### Exact matching
 
 If you want to ensure two JSON values are *exactly* the same, use [`assert_json_eq`](macro.assert_json_eq.html).
 
