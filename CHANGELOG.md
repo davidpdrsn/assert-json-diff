@@ -20,7 +20,7 @@ N/A
 
 ### Fixed
 
-N/A
+- Fix wrong error message when a JSON atom was missing from actual.
 
 ## [0.2.0] - 2018-11-16
 

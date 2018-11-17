@@ -133,7 +133,7 @@ fn main() {
 That will print
 
 ```
-json atom at path ".a.b" is missing from expected
+json atom at path ".a.b" is missing from actual
 ```
 
 ### Exact matching

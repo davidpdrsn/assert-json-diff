@@ -129,7 +129,7 @@
 //! That will print
 //!
 //! ```text
-//! json atom at path ".a.b" is missing from expected
+//! json atom at path ".a.b" is missing from actual
 //! ```
 //!
 //! ## Exact matching
@@ -153,7 +153,7 @@
 //! This will panic with the error message:
 //!
 //! ```text
-//! json atom at path ".a.b" is missing from rhs
+//! json atom at path ".a.b" is missing from lhs
 //! ```
 
 #![deny(
@@ -633,7 +633,7 @@ impl MatchErrors {
                             .indent(8),
                     ),
                     ErrorType::MissingPath(Either::Left(path)) => {
-                        format!(r#"json atom at path "{}" is missing from expected"#, path)
+                        format!(r#"json atom at path "{}" is missing from actual"#, path)
                     }
                     ErrorType::MissingPath(Either::Right((path, SideWithoutPath::Lhs))) => {
                         format!(r#"json atom at path "{}" is missing from lhs"#, path)
@@ -811,7 +811,13 @@ mod tests {
         );
         assert_output_eq(
             result,
-            Err(r#"json atom at path ".a.b" is missing from expected"#),
+            Err(r#"json atom at path ".a.b" is missing from actual"#),
+        );
+
+        let result = test_partial_match(Actual(json!({})), Expected(json!({ "a": true })));
+        assert_output_eq(
+            result,
+            Err(r#"json atom at path ".a" is missing from actual"#),
         );
 
         let result = test_partial_match(
@@ -880,7 +886,7 @@ mod tests {
         );
         assert_output_eq(
             result,
-            Err(r#"json atom at path ".a[2]" is missing from expected"#),
+            Err(r#"json atom at path ".a[2]" is missing from actual"#),
         );
     }
 
@@ -900,12 +906,6 @@ mod tests {
         "a"
     rhs:
         "b""#),
-        );
-
-        let result = test_exact_match(json!({ "a": {} }), json!({ "a": { "b": true }}));
-        assert_output_eq(
-            result,
-            Err(r#"json atom at path ".a.b" is missing from lhs"#),
         );
 
         let result = test_exact_match(
@@ -930,7 +930,7 @@ mod tests {
             Err(r#"json atom at path ".a.b" is missing from rhs"#),
         );
 
-        let result = test_exact_match(json!({ "a": {} }), json!({ "a": { "b": 1} }));
+        let result = test_exact_match(json!({ "a": {} }), json!({ "a": { "b": 1 } }));
         assert_output_eq(
             result,
             Err(r#"json atom at path ".a.b" is missing from lhs"#),
@@ -958,10 +958,10 @@ mod tests {
                     return;
                 } else {
                     println!("Errors didn't match");
-                    println!("Actual:");
-                    println!("{}", actual_error);
                     println!("Expected:");
                     println!("{}", expected_error);
+                    println!("Got:");
+                    println!("{}", actual_error);
                 }
             }
         }
