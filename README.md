@@ -16,7 +16,7 @@ It uses the [`serde_json::Value`] type to represent JSON.
 
 ```toml
 [dependencies]
-assert-json-diff = "0.2.0"
+assert-json-diff = "0.2.1"
 ```
 
 ### Partial matching
@@ -157,7 +157,7 @@ fn main() {
 This will panic with the error message:
 
 ```
-json atom at path ".a.b" is missing from rhs
+json atom at path ".a.b" is missing from lhs
 ```
 
 License: MIT

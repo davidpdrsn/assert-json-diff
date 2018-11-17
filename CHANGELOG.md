@@ -20,6 +20,12 @@ N/A
 
 ### Fixed
 
+N/A
+
+## [0.2.1] - 2018-11-15
+
+### Fixed
+
 - Fix wrong error message when a JSON atom was missing from actual.
 
 ## [0.2.0] - 2018-11-16
@@ -36,4 +42,5 @@ N/A
 
 Initial release.
 
+[0.2.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.1.0...v0.2.0

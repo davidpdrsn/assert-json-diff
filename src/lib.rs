@@ -12,7 +12,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! assert-json-diff = "0.2.0"
+//! assert-json-diff = "0.2.1"
 //! ```
 //!
 //! ## Partial matching
@@ -168,7 +168,7 @@
     unused_import_braces,
     unused_qualifications
 )]
-#![doc(html_root_url = "https://docs.rs/assert-json-diff/0.2.0")]
+#![doc(html_root_url = "https://docs.rs/assert-json-diff/0.2.1")]
 
 extern crate serde;
 #[allow(unused_imports)]
