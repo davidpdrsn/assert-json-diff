@@ -201,7 +201,13 @@ macro_rules! assert_json_include {
             panic!("\n\n{}\n\n", error);
         }
     }};
+    (actual: $actual:expr, expected: $expected:expr,) => {{
+        $crate::assert_json_include!(actual: $actual, expected: $expected)
+    }};
     (expected: $expected:expr, actual: $actual:expr) => {{
+        $crate::assert_json_include!(actual: $actual, expected: $expected)
+    }};
+    (expected: $expected:expr, actual: $actual:expr,) => {{
         $crate::assert_json_include!(actual: $actual, expected: $expected)
     }};
 }
@@ -221,6 +227,9 @@ macro_rules! assert_json_eq {
         if let Err(error) = $crate::assert_json_no_panic(comparison) {
             panic!("\n\n{}\n\n", error);
         }
+    }};
+    ($lhs:expr, $rhs:expr,) => {{
+        $crate::assert_json_eq!($lhs, $rhs)
     }};
 }
 
