@@ -20,6 +20,12 @@ N/A
 
 ### Fixed
 
+N/A
+
+## [1.0.0] - 2019-02-15
+
+### Fixed
+
 - Make macros work with trailing comma
 
 ## [0.2.1] - 2018-11-15
@@ -42,5 +48,6 @@ N/A
 
 Initial release.
 
+[1.0.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.1...v1.0.0
 [0.2.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.1.0...v0.2.0
