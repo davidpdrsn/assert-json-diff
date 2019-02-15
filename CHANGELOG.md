@@ -20,7 +20,7 @@ N/A
 
 ### Fixed
 
-N/A
+- Make macros work with trailing comma
 
 ## [0.2.1] - 2018-11-15
 
