@@ -14,6 +14,16 @@ fn can_pass() {
         actual: json!({ "a": { "b": true } }),
         expected: json!({ "a": {} })
     );
+
+    assert_json_include!(
+        actual: json!({ "a": { "b": true } }),
+        expected: json!({ "a": {} }),
+    );
+
+    assert_json_include!(
+        expected: json!({ "a": {} }),
+        actual: json!({ "a": { "b": true } }),
+    );
 }
 
 #[test]
@@ -28,6 +38,7 @@ fn can_fail() {
 #[test]
 fn can_pass_with_exact_match() {
     assert_json_eq!(json!({ "a": { "b": true } }), json!({ "a": { "b": true } }));
+    assert_json_eq!(json!({ "a": { "b": true } }), json!({ "a": { "b": true } }),);
 }
 
 #[test]
