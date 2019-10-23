@@ -16,7 +16,7 @@ serde_json = "1.0.32"
 serde = "1.0.80"
 
 [dev-dependencies]
-version-sync = "0.5"
+version-sync = "0.8"
 
 [badges]
 travis-ci = { repository = "davidpdrsn/assert-json-diff", branch = "master" }
