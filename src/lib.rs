@@ -182,7 +182,7 @@ use std::default::Default;
 use std::fmt;
 
 mod core_ext;
-use core_ext::{Indent, Indexes};
+use crate::core_ext::{Indent, Indexes};
 
 /// The macro used to compare two JSON values for an inclusive match.
 ///
@@ -248,7 +248,7 @@ pub fn assert_json_no_panic(comparison: Comparison) -> Result<(), String> {
             exact_match_at_path(lhs, rhs, Path::Root, &mut errors);
         }
     }
-    errors.to_output()
+    errors.into_output()
 }
 
 /// The type of comparison you want to make.
@@ -357,13 +357,11 @@ fn partial_match_at_path(actual: Actual, expected: Expected, path: Path, errors:
         };
 
         match_with_keys(keys.iter(), &actual, expected, path, errors);
-    } else {
-        if expected.0 != actual.0 {
-            errors.push(ErrorType::NotEq(
-                Either::Left((actual.clone(), expected.clone())),
-                path,
-            ));
-        }
+    } else if expected.0 != actual.0 {
+        errors.push(ErrorType::NotEq(
+            Either::Left((actual.clone(), expected.clone())),
+            path,
+        ));
     }
 }
 
@@ -417,17 +415,15 @@ fn exact_match_at_path(lhs: Value, rhs: Value, path: Path, errors: &mut MatchErr
         let keys = lhs_keys
             .iter()
             .chain(rhs_keys.iter())
-            .map(|s| s.clone())
+            .cloned()
             .collect::<HashSet<usize>>();
 
         exact_match_with_keys(keys.iter(), lhs, rhs, path, errors);
-    } else {
-        if lhs != rhs {
-            errors.push(ErrorType::NotEq(
-                Either::Right((lhs.clone(), rhs.clone())),
-                path,
-            ));
-        }
+    } else if lhs != rhs {
+        errors.push(ErrorType::NotEq(
+            Either::Right((lhs.clone(), rhs.clone())),
+            path,
+        ));
     }
 }
 
@@ -447,8 +443,8 @@ fn exact_match_with_keys<
         match (lhs.get(key), rhs.get(key)) {
             (Some(lhs), Some(rhs)) => {
                 exact_match_at_path(
-                    lhs.clone().into(),
-                    rhs.clone().into(),
+                    lhs.clone(),
+                    rhs.clone(),
                     path.dot(key),
                     errors,
                 );
@@ -490,7 +486,7 @@ impl<'a> Collection<&'a usize> for Vec<Value> {
     type Item = Value;
 
     fn get(&self, index: &'a usize) -> Option<&Self::Item> {
-        <[Value]>::get(self, index.clone())
+        <[Value]>::get(self, *index)
     }
 }
 
@@ -506,7 +502,7 @@ impl<'a> Collection<&'a usize> for Actual {
     type Item = Value;
 
     fn get(&self, index: &'a usize) -> Option<&Self::Item> {
-        <Value>::get(self, index.clone())
+        <Value>::get(self, *index)
     }
 }
 
@@ -573,7 +569,7 @@ impl Dot<usize> for Path {
 
 impl<'a> Dot<&'a usize> for Path {
     fn dot(&self, next: &'a usize) -> Path {
-        let comp = PathComp::Index(next.clone());
+        let comp = PathComp::Index(*next);
         self.extend(comp)
     }
 }
@@ -604,7 +600,7 @@ impl Default for MatchErrors {
 }
 
 impl MatchErrors {
-    fn to_output(self) -> Result<(), String> {
+    fn into_output(self) -> Result<(), String> {
         if self.errors.is_empty() {
             Ok(())
         } else {
@@ -673,7 +669,6 @@ enum SideWithoutPath {
 
 #[cfg(test)]
 mod tests {
-    #[macro_use]
     use super::*;
 
     #[test]
