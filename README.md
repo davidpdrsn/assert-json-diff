@@ -16,7 +16,7 @@ It uses the [`serde_json::Value`] type to represent JSON.
 
 ```toml
 [dependencies]
-assert-json-diff = "1.0.0"
+assert-json-diff = "1"
 ```
 
 ### Partial matching
