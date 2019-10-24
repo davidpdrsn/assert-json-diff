@@ -6,21 +6,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-### Added
+None.
 
-N/A
+### Breaking changes
 
-### Changed
+None.
 
-N/A
+## [1.0.1] - 2019-10-24
 
-### Removed
-
-N/A
-
-### Fixed
-
-N/A
+- Update to 2018 edition
 
 ## [1.0.0] - 2019-02-15
 
@@ -48,6 +42,7 @@ N/A
 
 Initial release.
 
+[1.0.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.0...1.0.1
 [1.0.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.1...1.0.0
 [0.2.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.1.0...v0.2.0
