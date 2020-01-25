@@ -15,6 +15,7 @@ edition = "2018"
 [dependencies]
 serde_json = "1.0.32"
 serde = "1.0.80"
+extend = "0.1.0"
 
 [dev-dependencies]
 version-sync = "0.8"

@@ -6,7 +6,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-None.
+- Internal diffing algorithm simplied. There should be no external changes. Some error messages might have changed, but everything that passed/failed before should still do the same.
 
 ### Breaking changes
 
