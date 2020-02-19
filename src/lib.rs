@@ -8,13 +8,6 @@
 //! [`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
 //! [`assert_eq!`]: https://doc.rust-lang.org/std/macro.assert_eq.html
 //!
-//! ## Install
-//!
-//! ```toml
-//! [dependencies]
-//! assert-json-diff = "1.0.0"
-//! ```
-//!
 //! ## Partial matching
 //!
 //! If you want to assert that one JSON value is "included" in another use
