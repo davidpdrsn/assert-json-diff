@@ -3,6 +3,8 @@ extern crate assert_json_diff;
 #[macro_use]
 extern crate serde_json;
 
+use assert_json_diff::{assert_json_eq_no_panic, assert_json_include_no_panic};
+
 #[test]
 fn can_pass() {
     assert_json_include!(
@@ -45,4 +47,18 @@ fn can_pass_with_exact_match() {
 #[should_panic]
 fn can_fail_with_exact_match() {
     assert_json_eq!(json!({ "a": { "b": true } }), json!({ "a": {} }));
+}
+
+#[test]
+fn inclusive_match_without_panicing() {
+    assert!(assert_json_include_no_panic(json!({ "a": 1, "b": 2 }), json!({ "b": 2})).is_ok());
+
+    assert!(assert_json_include_no_panic(json!({ "a": 1, "b": 2 }), json!("foo")).is_err());
+}
+
+#[test]
+fn exact_match_without_panicing() {
+    assert!(assert_json_eq_no_panic(json!([1, 2, 3]), json!([1, 2, 3])).is_ok());
+
+    assert!(assert_json_eq_no_panic(json!([1, 2, 3]), json!("foo")).is_err());
 }

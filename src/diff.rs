@@ -1,5 +1,4 @@
 use crate::core_ext::{Indent, Indexes};
-use crate::Mode;
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
@@ -7,6 +6,12 @@ pub fn diff<'a>(lhs: &'a Value, rhs: &'a Value, mode: Mode) -> Vec<Difference<'a
     let mut acc = vec![];
     diff_with(lhs, rhs, mode, Path::Root, &mut acc);
     acc
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Mode {
+    Lenient,
+    Strict,
 }
 
 fn diff_with<'a>(

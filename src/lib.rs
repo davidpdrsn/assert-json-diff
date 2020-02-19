@@ -169,7 +169,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_json;
 
-use diff::diff;
+use diff::{diff, Mode};
 use serde_json::Value;
 
 mod core_ext;
@@ -186,7 +186,7 @@ macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual: serde_json::Value = $actual;
         let expected: serde_json::Value = $expected;
-        if let Err(error) = $crate::assert_json_no_panic(actual, expected, $crate::Mode::Lenient) {
+        if let Err(error) = $crate::assert_json_include_no_panic(actual, expected) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -211,7 +211,7 @@ macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr) => {{
         let actual: serde_json::Value = $lhs;
         let expected: serde_json::Value = $rhs;
-        if let Err(error) = $crate::assert_json_no_panic(actual, expected, $crate::Mode::Strict) {
+        if let Err(error) = $crate::assert_json_eq_no_panic(actual, expected) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -220,15 +220,25 @@ macro_rules! assert_json_eq {
     }};
 }
 
-#[doc(hidden)]
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Mode {
-    Lenient,
-    Strict,
+/// Does the same as [`assert_json_include!`](macro.assert_json_include.html) but doesn't panic.
+///
+/// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
+/// This is might be useful if you want to control how failures are reported and don't want to deal
+/// with panics.
+pub fn assert_json_include_no_panic(actual: Value, expected: Value) -> Result<(), String> {
+    assert_json_no_panic(actual, expected, Mode::Lenient)
 }
 
-#[doc(hidden)]
-pub fn assert_json_no_panic(lhs: Value, rhs: Value, mode: Mode) -> Result<(), String> {
+/// Does the same as [`assert_json_eq!`](macro.assert_json_eq.html) but doesn't panic.
+///
+/// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
+/// This is might be useful if you want to control how failures are reported and don't want to deal
+/// with panics.
+pub fn assert_json_eq_no_panic(lhs: Value, rhs: Value) -> Result<(), String> {
+    assert_json_no_panic(lhs, rhs, Mode::Strict)
+}
+
+fn assert_json_no_panic(lhs: Value, rhs: Value, mode: Mode) -> Result<(), String> {
     let diffs = diff(&lhs, &rhs, mode);
 
     if diffs.is_empty() {

@@ -6,7 +6,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-None.
+- Introduce non-panicing functions with `assert_json_include_no_panic` and `assert_json_eq_no_panic`.
 
 ### Breaking changes
 
