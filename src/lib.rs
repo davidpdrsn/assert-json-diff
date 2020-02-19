@@ -186,9 +186,7 @@ macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual: serde_json::Value = $actual;
         let expected: serde_json::Value = $expected;
-        if let Err(error) =
-            $crate::assert_json_no_panic(actual, expected, $crate::Mode::Lenient)
-        {
+        if let Err(error) = $crate::assert_json_no_panic(actual, expected, $crate::Mode::Lenient) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -213,9 +211,7 @@ macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr) => {{
         let actual: serde_json::Value = $lhs;
         let expected: serde_json::Value = $rhs;
-        if let Err(error) =
-            $crate::assert_json_no_panic(actual, expected, $crate::Mode::Strict)
-        {
+        if let Err(error) = $crate::assert_json_no_panic(actual, expected, $crate::Mode::Strict) {
             panic!("\n\n{}\n\n", error);
         }
     }};
