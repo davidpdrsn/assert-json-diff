@@ -176,12 +176,11 @@ extern crate serde;
 #[macro_use]
 extern crate serde_json;
 
-use diff::{diff, Mode};
+use diff::diff;
 use serde_json::Value;
 
 mod core_ext;
-#[doc(hidden)]
-pub mod diff;
+mod diff;
 
 /// The macro used to compare two JSON values for an inclusive match.
 ///
@@ -195,7 +194,7 @@ macro_rules! assert_json_include {
         let actual: serde_json::Value = $actual;
         let expected: serde_json::Value = $expected;
         if let Err(error) =
-            $crate::assert_json_no_panic(actual, expected, $crate::diff::Mode::Lenient)
+            $crate::assert_json_no_panic(actual, expected, $crate::Mode::Lenient)
         {
             panic!("\n\n{}\n\n", error);
         }
@@ -222,7 +221,7 @@ macro_rules! assert_json_eq {
         let actual: serde_json::Value = $lhs;
         let expected: serde_json::Value = $rhs;
         if let Err(error) =
-            $crate::assert_json_no_panic(actual, expected, $crate::diff::Mode::Strict)
+            $crate::assert_json_no_panic(actual, expected, $crate::Mode::Strict)
         {
             panic!("\n\n{}\n\n", error);
         }
@@ -230,6 +229,13 @@ macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr,) => {{
         $crate::assert_json_eq!($lhs, $rhs)
     }};
+}
+
+#[doc(hidden)]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Mode {
+    Lenient,
+    Strict,
 }
 
 #[doc(hidden)]
