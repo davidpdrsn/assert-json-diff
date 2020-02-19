@@ -162,7 +162,7 @@
     unused_qualifications,
     unknown_lints
 )]
-#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.0.1")]
+#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.0.2")]
 
 extern crate serde;
 #[allow(unused_imports)]

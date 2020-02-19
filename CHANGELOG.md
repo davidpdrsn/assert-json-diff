@@ -6,11 +6,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-- Internal diffing algorithm simplied. There should be no external changes. Some error messages might have changed, but everything that passed/failed before should still do the same.
+None.
 
 ### Breaking changes
 
 None.
+
+## [1.0.2] - 2020-02-19
+
+- Internal diffing algorithm simplified. There should be no external changes. Some error messages might have changed, but everything that passed/failed before should still do the same.
 
 ## [1.0.1] - 2019-10-24
 
@@ -42,6 +46,7 @@ None.
 
 Initial release.
 
+[1.0.2]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.1...1.0.2
 [1.0.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.0...1.0.1
 [1.0.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.1...1.0.0
 [0.2.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.0...v0.2.1
