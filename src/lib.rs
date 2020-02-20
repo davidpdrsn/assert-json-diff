@@ -186,7 +186,7 @@ macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual: serde_json::Value = $actual;
         let expected: serde_json::Value = $expected;
-        if let Err(error) = $crate::assert_json_include_no_panic(actual, expected) {
+        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -209,9 +209,9 @@ macro_rules! assert_json_include {
 #[macro_export]
 macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr) => {{
-        let actual: serde_json::Value = $lhs;
-        let expected: serde_json::Value = $rhs;
-        if let Err(error) = $crate::assert_json_eq_no_panic(actual, expected) {
+        let lhs: serde_json::Value = $lhs;
+        let rhs: serde_json::Value = $rhs;
+        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -225,7 +225,7 @@ macro_rules! assert_json_eq {
 /// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
 /// This is might be useful if you want to control how failures are reported and don't want to deal
 /// with panics.
-pub fn assert_json_include_no_panic(actual: Value, expected: Value) -> Result<(), String> {
+pub fn assert_json_include_no_panic(actual: &Value, expected: &Value) -> Result<(), String> {
     assert_json_no_panic(actual, expected, Mode::Lenient)
 }
 
@@ -234,12 +234,12 @@ pub fn assert_json_include_no_panic(actual: Value, expected: Value) -> Result<()
 /// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
 /// This is might be useful if you want to control how failures are reported and don't want to deal
 /// with panics.
-pub fn assert_json_eq_no_panic(lhs: Value, rhs: Value) -> Result<(), String> {
+pub fn assert_json_eq_no_panic(lhs: &Value, rhs: &Value) -> Result<(), String> {
     assert_json_no_panic(lhs, rhs, Mode::Strict)
 }
 
-fn assert_json_no_panic(lhs: Value, rhs: Value, mode: Mode) -> Result<(), String> {
-    let diffs = diff(&lhs, &rhs, mode);
+fn assert_json_no_panic(lhs: &Value, rhs: &Value, mode: Mode) -> Result<(), String> {
+    let diffs = diff(lhs, rhs, mode);
 
     if diffs.is_empty() {
         Ok(())
@@ -548,10 +548,10 @@ mod tests {
     }
 
     fn test_partial_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(lhs, rhs, Mode::Lenient)
+        assert_json_no_panic(&lhs, &rhs, Mode::Lenient)
     }
 
     fn test_exact_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(lhs, rhs, Mode::Strict)
+        assert_json_no_panic(&lhs, &rhs, Mode::Strict)
     }
 }

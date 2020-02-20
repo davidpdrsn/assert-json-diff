@@ -51,14 +51,14 @@ fn can_fail_with_exact_match() {
 
 #[test]
 fn inclusive_match_without_panicing() {
-    assert!(assert_json_include_no_panic(json!({ "a": 1, "b": 2 }), json!({ "b": 2})).is_ok());
+    assert!(assert_json_include_no_panic(&json!({ "a": 1, "b": 2 }), &json!({ "b": 2})).is_ok());
 
-    assert!(assert_json_include_no_panic(json!({ "a": 1, "b": 2 }), json!("foo")).is_err());
+    assert!(assert_json_include_no_panic(&json!({ "a": 1, "b": 2 }), &json!("foo")).is_err());
 }
 
 #[test]
 fn exact_match_without_panicing() {
-    assert!(assert_json_eq_no_panic(json!([1, 2, 3]), json!([1, 2, 3])).is_ok());
+    assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!([1, 2, 3])).is_ok());
 
-    assert!(assert_json_eq_no_panic(json!([1, 2, 3]), json!("foo")).is_err());
+    assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!("foo")).is_err());
 }
