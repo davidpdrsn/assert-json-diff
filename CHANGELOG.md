@@ -6,11 +6,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-- Introduce non-panicing functions with `assert_json_include_no_panic` and `assert_json_eq_no_panic`.
+None.
 
 ### Breaking changes
 
 None.
+
+## [1.0.3] - 2020-02-21
+
+- Introduce non-panicking functions with `assert_json_include_no_panic` and `assert_json_eq_no_panic`.
 
 ## [1.0.2] - 2020-02-19
 
@@ -46,6 +50,7 @@ None.
 
 Initial release.
 
+[1.0.3]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.2...1.0.3
 [1.0.2]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.1...1.0.2
 [1.0.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.0...1.0.1
 [1.0.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.1...1.0.0
