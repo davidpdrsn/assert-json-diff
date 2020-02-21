@@ -293,7 +293,7 @@ impl<'a> fmt::Display for Key<'a> {
     }
 }
 
-fn fold_json<'a: 'b, 'b, 'c, F: Folder<'b>>(json: &'a Value, folder: &'c mut F) {
+fn fold_json<'a, F: Folder<'a>>(json: &'a Value, folder: &mut F) {
     match json {
         Value::Null => folder.on_null(json),
         Value::Bool(_) => folder.on_bool(json),
