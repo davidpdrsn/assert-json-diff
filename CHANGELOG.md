@@ -6,7 +6,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-None.
+- All methods now accept any `T: Serialize` rather than just `serde_json::Value`.
 
 ### Breaking changes
 

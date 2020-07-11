@@ -1,9 +1,8 @@
-#[macro_use]
-extern crate assert_json_diff;
-#[macro_use]
-extern crate serde_json;
-
-use assert_json_diff::{assert_json_eq_no_panic, assert_json_include_no_panic};
+use serde::Serialize;
+use assert_json_diff::{
+    assert_json_eq, assert_json_eq_no_panic, assert_json_include, assert_json_include_no_panic,
+};
+use serde_json::json;
 
 #[test]
 fn can_pass() {
@@ -61,4 +60,76 @@ fn exact_match_without_panicing() {
     assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!([1, 2, 3])).is_ok());
 
     assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!("foo")).is_err());
+}
+
+#[derive(Serialize)]
+struct User {
+    id: i32,
+    username: String
+}
+
+#[test]
+fn include_with_serializable() {
+    let user = User {
+        id: 1,
+        username: "bob".to_string(),
+    };
+
+    assert_json_include!(
+        actual: json!({
+            "id": 1,
+            "username": "bob",
+            "email": "bob@example.com"
+        }),
+        expected: user,
+    );
+}
+
+#[test]
+fn include_with_serializable_ref() {
+    let user = User {
+        id: 1,
+        username: "bob".to_string(),
+    };
+
+    assert_json_include!(
+        actual: &json!({
+            "id": 1,
+            "username": "bob",
+            "email": "bob@example.com"
+        }),
+        expected: &user,
+    );
+}
+
+#[test]
+fn eq_with_serializable() {
+    let user = User {
+        id: 1,
+        username: "bob".to_string(),
+    };
+
+    assert_json_eq!(
+        json!({
+            "id": 1,
+            "username": "bob"
+        }),
+        user,
+    );
+}
+
+#[test]
+fn eq_with_serializable_ref() {
+    let user = User {
+        id: 1,
+        username: "bob".to_string(),
+    };
+
+    assert_json_eq!(
+        &json!({
+            "id": 1,
+            "username": "bob"
+        }),
+        &user,
+    );
 }

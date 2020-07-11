@@ -51,7 +51,7 @@ macro_rules! direct_compare {
                 });
             }
         }
-    }
+    };
 }
 
 impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
@@ -323,6 +323,7 @@ trait Folder<'a> {
 mod test {
     #[allow(unused_imports)]
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_diffing_leaf_json() {
