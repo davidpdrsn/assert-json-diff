@@ -6,11 +6,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-- All methods now accept any `T: Serialize` rather than just `serde_json::Value`.
+None.
 
 ### Breaking changes
 
 None.
+
+## [1.1.0] - 2020-07-12
+
+- All methods now accept any `T: Serialize` rather than just `serde_json::Value`.
 
 ## [1.0.3] - 2020-02-21
 
@@ -50,6 +54,7 @@ None.
 
 Initial release.
 
+[1.1.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.3...1.1.0
 [1.0.3]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.2...1.0.3
 [1.0.2]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.1...1.0.2
 [1.0.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.0...1.0.1

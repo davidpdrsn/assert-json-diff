@@ -2,14 +2,15 @@
 
 # assert-json-diff
 
-This crate includes macros for comparing two JSON values. It is designed to give much
-more helpful error messages than the standard [`assert_eq!`]. It basically does a diff of the
-two objects and tells you the exact differences. This is useful when asserting that two large
-JSON objects are the same.
+This crate includes macros for comparing two serializable values by diffing their JSON
+representations. It is designed to give much more helpful error messages than the standard
+[`assert_eq!`]. It basically does a diff of the two objects and tells you the exact
+differences. This is useful when asserting that two large JSON objects are the same.
 
-It uses the [`serde_json::Value`] type to represent JSON.
+It uses the [serde] and [serde_json] to perform the serialization.
 
-[`serde_json::Value`]: https://docs.serde.rs/serde_json/value/enum.Value.html
+[serde]: https://crates.io/crates/serde
+[serde_json]: https://crates.io/crates/serde_json
 [`assert_eq!`]: https://doc.rust-lang.org/std/macro.assert_eq.html
 
 ### Partial matching
@@ -18,10 +19,8 @@ If you want to assert that one JSON value is "included" in another use
 [`assert_json_include`](macro.assert_json_include.html):
 
 ```rust
-#[macro_use]
-extern crate assert_json_diff;
-#[macro_use]
-extern crate serde_json;
+use assert_json_diff::assert_json_include;
+use serde_json::json;
 
 fn main() {
     let a = json!({
@@ -86,10 +85,8 @@ json atoms at path ".data.users[1].id" are not equal:
 of the JSON without having to specify the whole thing. For example this test passes:
 
 ```rust
-#[macro_use]
-extern crate assert_json_diff;
-#[macro_use]
-extern crate serde_json;
+use assert_json_diff::assert_json_include;
+use serde_json::json;
 
 fn main() {
     assert_json_include!(
@@ -106,10 +103,8 @@ fn main() {
 However `expected` cannot contain additional data so this test fails:
 
 ```rust
-#[macro_use]
-extern crate assert_json_diff;
-#[macro_use]
-extern crate serde_json;
+use assert_json_diff::assert_json_include;
+use serde_json::json;
 
 fn main() {
     assert_json_include!(
@@ -134,10 +129,8 @@ json atom at path ".a.b" is missing from actual
 If you want to ensure two JSON values are *exactly* the same, use [`assert_json_eq`](macro.assert_json_eq.html).
 
 ```rust
-#[macro_use]
-extern crate assert_json_diff;
-#[macro_use]
-extern crate serde_json;
+use assert_json_diff::assert_json_eq;
+use serde_json::json;
 
 fn main() {
     assert_json_eq!(

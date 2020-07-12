@@ -155,7 +155,7 @@
     unused_qualifications,
     unknown_lints
 )]
-#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.0.3")]
+#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
 
 use diff::{diff, Mode};
 use serde::Serialize;
