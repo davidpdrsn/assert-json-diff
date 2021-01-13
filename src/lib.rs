@@ -159,6 +159,7 @@
 
 use diff::{diff, Mode};
 use serde::Serialize;
+pub use crate::diff::NumericMode;
 
 mod core_ext;
 mod diff;
@@ -174,7 +175,7 @@ macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual = $actual;
         let expected = $expected;
-        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected) {
+        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::Strict) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -189,6 +190,32 @@ macro_rules! assert_json_include {
     }};
 }
 
+/// The macro used to compare two JSON values for an inclusive match. Assumes that all numeric values are floats.
+///
+/// It allows `actual` to contain additional data. If you want an exact match use
+/// [`assert_json_eq`](macro.assert_json_eq.html) instead.
+///
+/// See [crate documentation](index.html) for examples.
+#[macro_export]
+macro_rules! assert_json_include_assume_float {
+    (actual: $actual:expr, expected: $expected:expr) => {{
+        let actual = $actual;
+        let expected = $expected;
+        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::AssumeFloat) {
+            panic!("\n\n{}\n\n", error);
+        }
+    }};
+    (actual: $actual:expr, expected: $expected:expr,) => {{
+        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
+    }};
+    (expected: $expected:expr, actual: $actual:expr) => {{
+        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
+    }};
+    (expected: $expected:expr, actual: $actual:expr,) => {{
+        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
+    }};
+}
+
 /// The macro used to compare two JSON values for an exact match.
 ///
 /// If you want an inclusive match use [`assert_json_include`](macro.assert_json_include.html) instead.
@@ -199,7 +226,26 @@ macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr) => {{
         let lhs = $lhs;
         let rhs = $rhs;
-        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs) {
+        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::Strict) {
+            panic!("\n\n{}\n\n", error);
+        }
+    }};
+    ($lhs:expr, $rhs:expr,) => {{
+        $crate::assert_json_eq!($lhs, $rhs)
+    }};
+}
+
+/// The macro used to compare two JSON values for an exact match. Assume that all numeric values are float.
+///
+/// If you want an inclusive match use [`assert_json_include`](macro.assert_json_include.html) instead.
+///
+/// See [crate documentation](index.html) for examples.
+#[macro_export]
+macro_rules! assert_json_eq_assume_float {
+    ($lhs:expr, $rhs:expr) => {{
+        let lhs = $lhs;
+        let rhs = $rhs;
+        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::AssumeFloat) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -216,12 +262,13 @@ macro_rules! assert_json_eq {
 pub fn assert_json_include_no_panic<Actual, Expected>(
     actual: &Actual,
     expected: &Expected,
+    num_mode: NumericMode
 ) -> Result<(), String>
 where
     Actual: Serialize,
     Expected: Serialize,
 {
-    assert_json_no_panic(actual, expected, Mode::Lenient)
+    assert_json_no_panic(actual, expected, Mode::Lenient, num_mode)
 }
 
 /// Does the same as [`assert_json_eq!`](macro.assert_json_eq.html) but doesn't panic.
@@ -229,15 +276,15 @@ where
 /// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
 /// This is might be useful if you want to control how failures are reported and don't want to deal
 /// with panics.
-pub fn assert_json_eq_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs) -> Result<(), String>
+pub fn assert_json_eq_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs, num_mode: NumericMode) -> Result<(), String>
 where
     Lhs: Serialize,
     Rhs: Serialize,
 {
-    assert_json_no_panic(lhs, rhs, Mode::Strict)
+    assert_json_no_panic(lhs, rhs, Mode::Strict, num_mode)
 }
 
-fn assert_json_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs, mode: Mode) -> Result<(), String>
+fn assert_json_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs, mode: Mode, num_mode: NumericMode) -> Result<(), String>
 where
     Lhs: Serialize,
     Rhs: Serialize,
@@ -255,7 +302,7 @@ where
         )
     });
 
-    let diffs = diff(&lhs, &rhs, mode);
+    let diffs = diff(&lhs, &rhs, mode, num_mode);
 
     if diffs.is_empty() {
         Ok(())
@@ -565,10 +612,10 @@ mod tests {
     }
 
     fn test_partial_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(&lhs, &rhs, Mode::Lenient)
+        assert_json_no_panic(&lhs, &rhs, Mode::Lenient, NumericMode::Strict)
     }
 
     fn test_exact_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(&lhs, &rhs, Mode::Strict)
+        assert_json_no_panic(&lhs, &rhs, Mode::Strict, NumericMode::Strict)
     }
 }
