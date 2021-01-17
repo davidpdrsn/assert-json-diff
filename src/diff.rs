@@ -1,30 +1,18 @@
 use crate::core_ext::{Indent, Indexes};
-use crate::NumericMode;
+use crate::{CompareMode, Config, NumericMode};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub(crate) fn diff<'a>(
-    lhs: &'a Value,
-    rhs: &'a Value,
-    mode: Mode,
-    num_mode: NumericMode,
-) -> Vec<Difference<'a>> {
+pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
     let mut acc = vec![];
-    diff_with(lhs, rhs, mode, num_mode, Path::Root, &mut acc);
+    diff_with(lhs, rhs, config, Path::Root, &mut acc);
     acc
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum Mode {
-    Lenient,
-    Strict,
 }
 
 fn diff_with<'a>(
     lhs: &'a Value,
     rhs: &'a Value,
-    mode: Mode,
-    num_mode: NumericMode,
+    config: Config,
     path: Path<'a>,
     acc: &mut Vec<Difference<'a>>,
 ) {
@@ -32,8 +20,7 @@ fn diff_with<'a>(
         rhs,
         path,
         acc,
-        mode,
-        num_mode,
+        config,
     };
 
     fold_json(lhs, &mut folder);
@@ -44,8 +31,7 @@ struct DiffFolder<'a, 'b> {
     rhs: &'a Value,
     path: Path<'a>,
     acc: &'b mut Vec<Difference<'a>>,
-    mode: Mode,
-    num_mode: NumericMode,
+    config: Config,
 }
 
 macro_rules! direct_compare {
@@ -56,8 +42,7 @@ macro_rules! direct_compare {
                     lhs: Some(lhs),
                     rhs: Some(&self.rhs),
                     path: self.path.clone(),
-                    mode: self.mode,
-                    num_mode: self.num_mode,
+                    config: self.config.clone(),
                 });
             }
         }
@@ -70,7 +55,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
     direct_compare!(on_string);
 
     fn on_number(&mut self, lhs: &'a Value) {
-        let is_equal = match self.num_mode {
+        let is_equal = match self.config.numeric_mode {
             NumericMode::Strict => self.rhs == lhs,
             NumericMode::AssumeFloat => self.rhs.as_f64() == lhs.as_f64(),
         };
@@ -79,8 +64,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                 lhs: Some(lhs),
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
-                mode: self.mode,
-                num_mode: self.num_mode,
+                config: self.config.clone(),
             });
         }
     }
@@ -89,25 +73,24 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         if let Some(rhs) = self.rhs.as_array() {
             let lhs = lhs.as_array().unwrap();
 
-            match self.mode {
-                Mode::Lenient => {
+            match self.config.compare_mode {
+                CompareMode::Inclusive => {
                     for (idx, rhs) in rhs.iter().enumerate() {
                         let path = self.path.append(Key::Idx(idx));
 
                         if let Some(lhs) = lhs.get(idx) {
-                            diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc)
+                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
                                 rhs: Some(&self.rhs),
                                 path,
-                                mode: self.mode,
-                                num_mode: self.num_mode,
+                                config: self.config.clone(),
                             });
                         }
                     }
                 }
-                Mode::Strict => {
+                CompareMode::Strict => {
                     let all_keys = rhs
                         .indexes()
                         .into_iter()
@@ -118,15 +101,14 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc);
+                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
                                     lhs: None,
                                     rhs: Some(rhs),
                                     path,
-                                    mode: self.mode,
-                                    num_mode: self.num_mode,
+                                    config: self.config.clone(),
                                 });
                             }
                             (Some(lhs), None) => {
@@ -134,8 +116,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                                     lhs: Some(lhs),
                                     rhs: None,
                                     path,
-                                    mode: self.mode,
-                                    num_mode: self.num_mode,
+                                    config: self.config.clone(),
                                 });
                             }
                             (None, None) => {
@@ -150,8 +131,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                 lhs: Some(lhs),
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
-                mode: self.mode,
-                num_mode: self.num_mode,
+                config: self.config.clone(),
             });
         }
     }
@@ -160,40 +140,38 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         if let Some(rhs) = self.rhs.as_object() {
             let lhs = lhs.as_object().unwrap();
 
-            match self.mode {
-                Mode::Lenient => {
+            match self.config.compare_mode {
+                CompareMode::Inclusive => {
                     for (key, rhs) in rhs.iter() {
                         let path = self.path.append(Key::Field(key));
 
                         if let Some(lhs) = lhs.get(key) {
-                            diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc)
+                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
                                 rhs: Some(&self.rhs),
                                 path,
-                                mode: self.mode,
-                                num_mode: self.num_mode,
+                                config: self.config.clone(),
                             });
                         }
                     }
                 }
-                Mode::Strict => {
+                CompareMode::Strict => {
                     let all_keys = rhs.keys().chain(lhs.keys()).collect::<HashSet<_>>();
                     for key in all_keys {
                         let path = self.path.append(Key::Field(key));
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc);
+                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
                                     lhs: None,
                                     rhs: Some(rhs),
                                     path,
-                                    mode: self.mode,
-                                    num_mode: self.num_mode,
+                                    config: self.config.clone(),
                                 });
                             }
                             (Some(lhs), None) => {
@@ -201,8 +179,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                                     lhs: Some(lhs),
                                     rhs: None,
                                     path,
-                                    mode: self.mode,
-                                    num_mode: self.num_mode,
+                                    config: self.config.clone(),
                                 });
                             }
                             (None, None) => {
@@ -217,8 +194,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                 lhs: Some(lhs),
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
-                mode: self.mode,
-                num_mode: self.num_mode,
+                config: self.config.clone(),
             });
         }
     }
@@ -229,50 +205,47 @@ pub(crate) struct Difference<'a> {
     path: Path<'a>,
     lhs: Option<&'a Value>,
     rhs: Option<&'a Value>,
-    mode: Mode,
-    num_mode: NumericMode,
+    config: Config,
 }
 
 impl<'a> fmt::Display for Difference<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Mode::*;
-
         let json_to_string = |json: &Value| serde_json::to_string_pretty(json).unwrap();
 
-        match (&self.mode, &self.lhs, &self.rhs) {
-            (Lenient, Some(actual), Some(expected)) => {
+        match (&self.config.compare_mode, &self.lhs, &self.rhs) {
+            (CompareMode::Inclusive, Some(actual), Some(expected)) => {
                 writeln!(f, "json atoms at path \"{}\" are not equal:", self.path)?;
                 writeln!(f, "    expected:")?;
                 writeln!(f, "{}", json_to_string(expected).indent(8))?;
                 writeln!(f, "    actual:")?;
                 write!(f, "{}", json_to_string(actual).indent(8))?;
             }
-            (Lenient, None, Some(_expected)) => {
+            (CompareMode::Inclusive, None, Some(_expected)) => {
                 write!(
                     f,
                     "json atom at path \"{}\" is missing from actual",
                     self.path
                 )?;
             }
-            (Lenient, Some(_actual), None) => {
+            (CompareMode::Inclusive, Some(_actual), None) => {
                 unreachable!("stuff missing actual wont produce an error")
             }
-            (Lenient, None, None) => unreachable!("can't both be missing"),
+            (CompareMode::Inclusive, None, None) => unreachable!("can't both be missing"),
 
-            (Strict, Some(lhs), Some(rhs)) => {
+            (CompareMode::Strict, Some(lhs), Some(rhs)) => {
                 writeln!(f, "json atoms at path \"{}\" are not equal:", self.path)?;
                 writeln!(f, "    lhs:")?;
                 writeln!(f, "{}", json_to_string(lhs).indent(8))?;
                 writeln!(f, "    rhs:")?;
                 write!(f, "{}", json_to_string(rhs).indent(8))?;
             }
-            (Strict, None, Some(_)) => {
+            (CompareMode::Strict, None, Some(_)) => {
                 write!(f, "json atom at path \"{}\" is missing from lhs", self.path)?;
             }
-            (Strict, Some(_), None) => {
+            (CompareMode::Strict, Some(_), None) => {
                 write!(f, "json atom at path \"{}\" is missing from rhs", self.path)?;
             }
-            (Strict, None, None) => unreachable!("can't both be missing"),
+            (CompareMode::Strict, None, None) => unreachable!("can't both be missing"),
         }
 
         Ok(())
@@ -349,81 +322,84 @@ mod test {
         let diffs = diff(
             &json!(null),
             &json!(null),
-            Mode::Lenient,
-            NumericMode::Strict,
+            Config::new(CompareMode::Inclusive),
         );
         assert_eq!(diffs, vec![]);
 
         let diffs = diff(
             &json!(false),
             &json!(false),
-            Mode::Lenient,
-            NumericMode::Strict,
+            Config::new(CompareMode::Inclusive),
         );
         assert_eq!(diffs, vec![]);
 
         let diffs = diff(
             &json!(true),
             &json!(true),
-            Mode::Lenient,
-            NumericMode::Strict,
+            Config::new(CompareMode::Inclusive),
         );
         assert_eq!(diffs, vec![]);
 
         let diffs = diff(
             &json!(false),
             &json!(true),
-            Mode::Lenient,
-            NumericMode::Strict,
+            Config::new(CompareMode::Inclusive),
         );
         assert_eq!(diffs.len(), 1);
 
         let diffs = diff(
             &json!(true),
             &json!(false),
-            Mode::Lenient,
-            NumericMode::Strict,
+            Config::new(CompareMode::Inclusive),
         );
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!(2);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);
         let expected = json!(2);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1.0);
         let expected = json!(1.0);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!(1);
         let expected = json!(1.0);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1.0);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);
         let expected = json!(1.0);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::AssumeFloat);
+        let diffs = diff(
+            &actual,
+            &expected,
+            Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat),
+        );
         assert_eq!(diffs, vec![]);
 
         let actual = json!(1.0);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::AssumeFloat);
+        let diffs = diff(
+            &actual,
+            &expected,
+            Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat),
+        );
         assert_eq!(diffs, vec![]);
     }
 
@@ -432,52 +408,52 @@ mod test {
         // empty
         let actual = json!([]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!([1]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         // eq
         let actual = json!([1]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         // actual longer
         let actual = json!([1, 2]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         // expected longer
         let actual = json!([1]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         // eq length but different
         let actual = json!([1, 3]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         // different types
         let actual = json!(1);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!([1]);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
     }
 
@@ -485,22 +461,22 @@ mod test {
     fn test_array_strict() {
         let actual = json!([]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([1, 2]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([1]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!([1, 2]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 1);
     }
 
@@ -508,32 +484,32 @@ mod test {
     fn test_object() {
         let actual = json!({});
         let expected = json!({});
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "a": 1 });
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1, "b": 123 });
         let expected = json!({ "a": 1 });
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "b": 1 });
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "a": 2 });
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs.len(), 1);
 
         let actual = json!({ "a": { "b": true } });
         let expected = json!({ "a": {} });
-        let diffs = diff(&actual, &expected, Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
         assert_eq!(diffs, vec![]);
     }
 
@@ -541,16 +517,16 @@ mod test {
     fn test_object_strict() {
         let lhs = json!({});
         let rhs = json!({ "a": 1 });
-        let diffs = diff(&lhs, &rhs, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&lhs, &rhs, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 1);
 
         let lhs = json!({ "a": 1 });
         let rhs = json!({});
-        let diffs = diff(&lhs, &rhs, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&lhs, &rhs, Config::new(CompareMode::Strict));
         assert_eq!(diffs.len(), 1);
 
         let json = json!({ "a": 1 });
-        let diffs = diff(&json, &json, Mode::Strict, NumericMode::Strict);
+        let diffs = diff(&json, &json, Config::new(CompareMode::Strict));
         assert_eq!(diffs, vec![]);
     }
 }

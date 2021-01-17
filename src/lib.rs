@@ -18,47 +18,45 @@
 //! use assert_json_diff::assert_json_include;
 //! use serde_json::json;
 //!
-//! fn main() {
-//!     let a = json!({
-//!         "data": {
-//!             "users": [
-//!                 {
-//!                     "id": 1,
-//!                     "country": {
-//!                         "name": "Denmark"
-//!                     }
-//!                 },
-//!                 {
-//!                     "id": 24,
-//!                     "country": {
-//!                         "name": "Denmark"
-//!                     }
+//! let a = json!({
+//!     "data": {
+//!         "users": [
+//!             {
+//!                 "id": 1,
+//!                 "country": {
+//!                     "name": "Denmark"
 //!                 }
-//!             ]
-//!         }
-//!     });
-//!
-//!     let b = json!({
-//!         "data": {
-//!             "users": [
-//!                 {
-//!                     "id": 1,
-//!                     "country": {
-//!                         "name": "Sweden"
-//!                     }
-//!                 },
-//!                 {
-//!                     "id": 2,
-//!                     "country": {
-//!                         "name": "Denmark"
-//!                     }
+//!             },
+//!             {
+//!                 "id": 24,
+//!                 "country": {
+//!                     "name": "Denmark"
 //!                 }
-//!             ]
-//!         }
-//!     });
+//!             }
+//!         ]
+//!     }
+//! });
 //!
-//!     assert_json_include!(actual: a, expected: b)
-//! }
+//! let b = json!({
+//!     "data": {
+//!         "users": [
+//!             {
+//!                 "id": 1,
+//!                 "country": {
+//!                     "name": "Sweden"
+//!                 }
+//!             },
+//!             {
+//!                 "id": 2,
+//!                 "country": {
+//!                     "name": "Denmark"
+//!                 }
+//!             }
+//!         ]
+//!     }
+//! });
+//!
+//! assert_json_include!(actual: a, expected: b)
 //! ```
 //!
 //! This will panic with the error message:
@@ -84,16 +82,14 @@
 //! use assert_json_diff::assert_json_include;
 //! use serde_json::json;
 //!
-//! fn main() {
-//!     assert_json_include!(
-//!         actual: json!({
-//!             "a": { "b": 1 },
-//!         }),
-//!         expected: json!({
-//!             "a": {},
-//!         })
-//!     )
-//! }
+//! assert_json_include!(
+//!     actual: json!({
+//!         "a": { "b": 1 },
+//!     }),
+//!     expected: json!({
+//!         "a": {},
+//!     })
+//! )
 //! ```
 //!
 //! However `expected` cannot contain additional data so this test fails:
@@ -102,16 +98,14 @@
 //! use assert_json_diff::assert_json_include;
 //! use serde_json::json;
 //!
-//! fn main() {
-//!     assert_json_include!(
-//!         actual: json!({
-//!             "a": {},
-//!         }),
-//!         expected: json!({
-//!             "a": { "b": 1 },
-//!         })
-//!     )
-//! }
+//! assert_json_include!(
+//!     actual: json!({
+//!         "a": {},
+//!     }),
+//!     expected: json!({
+//!         "a": { "b": 1 },
+//!     })
+//! )
 //! ```
 //!
 //! That will print
@@ -128,12 +122,10 @@
 //! use assert_json_diff::assert_json_eq;
 //! use serde_json::json;
 //!
-//! fn main() {
-//!     assert_json_eq!(
-//!         json!({ "a": { "b": 1 } }),
-//!         json!({ "a": {} })
-//!     )
-//! }
+//! assert_json_eq!(
+//!     json!({ "a": { "b": 1 } }),
+//!     json!({ "a": {} })
+//! )
 //! ```
 //!
 //! This will panic with the error message:
@@ -141,29 +133,33 @@
 //! ```text
 //! json atom at path ".a.b" is missing from lhs
 //! ```
+//!
+//! ## Further customization
+//!
+//! You can use [`assert_json_matches`] to further customize the comparison.
 
-#![deny(
-    missing_docs,
-    unused_imports,
-    missing_debug_implementations,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unsafe_code,
-    unstable_features,
-    unused_import_braces,
-    unused_qualifications,
-    unknown_lints
-)]
-#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
+// #![deny(
+//     missing_docs,
+//     unused_imports,
+//     missing_debug_implementations,
+//     missing_copy_implementations,
+//     trivial_casts,
+//     trivial_numeric_casts,
+//     unsafe_code,
+//     unstable_features,
+//     unused_import_braces,
+//     unused_qualifications,
+//     unknown_lints
+// )]
+// #![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
 
-use diff::{diff, Mode};
+use diff::diff;
 use serde::Serialize;
 
 mod core_ext;
 mod diff;
 
-/// The macro used to compare two JSON values for an inclusive match.
+/// Compare two JSON values for an inclusive match.
 ///
 /// It allows `actual` to contain additional data. If you want an exact match use
 /// [`assert_json_eq`](macro.assert_json_eq.html) instead.
@@ -171,136 +167,73 @@ mod diff;
 /// See [crate documentation](index.html) for examples.
 #[macro_export]
 macro_rules! assert_json_include {
-    (actual: $actual:expr, expected: $expected:expr) => {{
-        let actual = $actual;
-        let expected = $expected;
-        if let Err(error) =
-            $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::Strict)
-        {
-            panic!("\n\n{}\n\n", error);
-        }
+    (actual: $actual:expr, expected: $expected:expr $(,)?) => {{
+        $crate::assert_json_matches!(
+            $actual,
+            $expected,
+            $crate::Config::new($crate::CompareMode::Inclusive)
+        )
     }};
-    (actual: $actual:expr, expected: $expected:expr,) => {{
-        $crate::assert_json_include!(actual: $actual, expected: $expected)
-    }};
-    (expected: $expected:expr, actual: $actual:expr) => {{
-        $crate::assert_json_include!(actual: $actual, expected: $expected)
-    }};
-    (expected: $expected:expr, actual: $actual:expr,) => {{
+    (expected: $expected:expr, actual: $actual:expr $(,)?) => {{
         $crate::assert_json_include!(actual: $actual, expected: $expected)
     }};
 }
 
-/// The macro used to compare two JSON values for an inclusive match. Assumes that all numeric values are floats.
-///
-/// It allows `actual` to contain additional data. If you want an exact match use
-/// [`assert_json_eq`](macro.assert_json_eq.html) instead.
-///
-/// See [crate documentation](index.html) for examples.
-#[macro_export]
-macro_rules! assert_json_include_assume_float {
-    (actual: $actual:expr, expected: $expected:expr) => {{
-        let actual = $actual;
-        let expected = $expected;
-        if let Err(error) = $crate::assert_json_include_no_panic(
-            &actual,
-            &expected,
-            $crate::NumericMode::AssumeFloat,
-        ) {
-            panic!("\n\n{}\n\n", error);
-        }
-    }};
-    (actual: $actual:expr, expected: $expected:expr,) => {{
-        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
-    }};
-    (expected: $expected:expr, actual: $actual:expr) => {{
-        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
-    }};
-    (expected: $expected:expr, actual: $actual:expr,) => {{
-        $crate::assert_json_include_assume_float!(actual: $actual, expected: $expected)
-    }};
-}
-
-/// The macro used to compare two JSON values for an exact match.
+/// Compare two JSON values for an exact match.
 ///
 /// If you want an inclusive match use [`assert_json_include`](macro.assert_json_include.html) instead.
 ///
 /// See [crate documentation](index.html) for examples.
 #[macro_export]
 macro_rules! assert_json_eq {
-    ($lhs:expr, $rhs:expr) => {{
-        let lhs = $lhs;
-        let rhs = $rhs;
-        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::Strict)
-        {
-            panic!("\n\n{}\n\n", error);
-        }
-    }};
-    ($lhs:expr, $rhs:expr,) => {{
-        $crate::assert_json_eq!($lhs, $rhs)
+    ($lhs:expr, $rhs:expr $(,)?) => {{
+        $crate::assert_json_matches!($lhs, $rhs, $crate::Config::new($crate::CompareMode::Strict))
     }};
 }
 
-/// The macro used to compare two JSON values for an exact match. Assume that all numeric values are float.
+/// Compare two JSON values according to a configuration.
 ///
-/// If you want an inclusive match use [`assert_json_include`](macro.assert_json_include.html) instead.
+/// ```
+/// use assert_json_diff::{
+///     CompareMode,
+///     Config,
+///     NumericMode,
+///     assert_json_matches,
+/// };
+/// use serde_json::json;
 ///
-/// See [crate documentation](index.html) for examples.
+/// let config = Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat);
+///
+/// assert_json_matches!(
+///     json!({
+///         "a": { "b": 1 },
+///     }),
+///     json!({
+///         "a": {},
+///     }),
+///     config,
+/// )
+/// ```
 #[macro_export]
-macro_rules! assert_json_eq_assume_float {
-    ($lhs:expr, $rhs:expr) => {{
+macro_rules! assert_json_matches {
+    ($lhs:expr, $rhs:expr, $config:expr $(,)?) => {{
         let lhs = $lhs;
         let rhs = $rhs;
-        if let Err(error) =
-            $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::AssumeFloat)
-        {
+        if let Err(error) = $crate::assert_json_matches_no_panic(&lhs, &rhs, $config) {
             panic!("\n\n{}\n\n", error);
         }
     }};
-    ($lhs:expr, $rhs:expr,) => {{
-        $crate::assert_json_eq!($lhs, $rhs)
-    }};
 }
 
-/// Does the same as [`assert_json_include!`](macro.assert_json_include.html) but doesn't panic.
+/// Compares two JSON values without panicking.
 ///
 /// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
 /// This is might be useful if you want to control how failures are reported and don't want to deal
 /// with panics.
-pub fn assert_json_include_no_panic<Actual, Expected>(
-    actual: &Actual,
-    expected: &Expected,
-    num_mode: NumericMode,
-) -> Result<(), String>
-where
-    Actual: Serialize,
-    Expected: Serialize,
-{
-    assert_json_no_panic(actual, expected, Mode::Lenient, num_mode)
-}
-
-/// Does the same as [`assert_json_eq!`](macro.assert_json_eq.html) but doesn't panic.
-///
-/// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
-/// This is might be useful if you want to control how failures are reported and don't want to deal
-/// with panics.
-pub fn assert_json_eq_no_panic<Lhs, Rhs>(
+pub fn assert_json_matches_no_panic<Lhs, Rhs>(
     lhs: &Lhs,
     rhs: &Rhs,
-    num_mode: NumericMode,
-) -> Result<(), String>
-where
-    Lhs: Serialize,
-    Rhs: Serialize,
-{
-    assert_json_no_panic(lhs, rhs, Mode::Strict, num_mode)
-}
-
-fn assert_json_no_panic<Lhs, Rhs>(
-    lhs: &Lhs,
-    rhs: &Rhs,
-    mode: Mode,
-    num_mode: NumericMode,
+    config: Config,
 ) -> Result<(), String>
 where
     Lhs: Serialize,
@@ -319,7 +252,7 @@ where
         )
     });
 
-    let diffs = diff(&lhs, &rhs, mode, num_mode);
+    let diffs = diff(&lhs, &rhs, config);
 
     if diffs.is_empty() {
         Ok(())
@@ -331,6 +264,55 @@ where
             .join("\n\n");
         Err(msg)
     }
+}
+
+/// Configuration for how JSON values should be compared.
+#[derive(Debug, Clone, PartialEq)]
+#[allow(missing_copy_implementations)]
+pub struct Config {
+    pub(crate) compare_mode: CompareMode,
+    pub(crate) numeric_mode: NumericMode,
+}
+
+impl Config {
+    /// Create a new [`Config`] using the given [`CompareMode`].
+    ///
+    /// The default `numeric_mode` is be [`NumericMode::Strict`].
+    pub fn new(compare_mode: CompareMode) -> Self {
+        Self {
+            compare_mode,
+            numeric_mode: NumericMode::Strict,
+        }
+    }
+
+    /// Change the config's numeric mode.
+    ///
+    /// The default `numeric_mode` is be [`NumericMode::Strict`].
+    pub fn numeric_mode(mut self, numeric_mode: NumericMode) -> Self {
+        self.numeric_mode = numeric_mode;
+        self
+    }
+
+    /// Change the config's compare mode.
+    pub fn compare_mode(mut self, compare_mode: CompareMode) -> Self {
+        self.compare_mode = compare_mode;
+        self
+    }
+}
+
+/// Mode for how JSON values should be compared.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum CompareMode {
+    /// The two JSON values don't have to be exactly equal. The "actual" value must is only
+    /// required to be "contained" inside "expected". See [crate documentation](index.html) for
+    /// examples.
+    ///
+    /// The mode used with [`assert_json_include`].
+    Inclusive,
+    /// The two JSON values must be exactly equal.
+    ///
+    /// The mode used with [`assert_json_eq`].
+    Strict,
 }
 
 /// How should numbers be compared.
@@ -638,10 +620,10 @@ mod tests {
     }
 
     fn test_partial_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(&lhs, &rhs, Mode::Lenient, NumericMode::Strict)
+        assert_json_matches_no_panic(&lhs, &rhs, Config::new(CompareMode::Inclusive))
     }
 
     fn test_exact_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_no_panic(&lhs, &rhs, Mode::Strict, NumericMode::Strict)
+        assert_json_matches_no_panic(&lhs, &rhs, Config::new(CompareMode::Strict))
     }
 }
