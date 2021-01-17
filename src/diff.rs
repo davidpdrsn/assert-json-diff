@@ -72,7 +72,7 @@ macro_rules! direct_compare {
     };
 }
 
-impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
+impl<'a, 'b> DiffFolder<'a, 'b> {
     direct_compare!(on_null);
     direct_compare!(on_bool);
     direct_compare!(on_string);
@@ -335,7 +335,7 @@ impl<'a> fmt::Display for Key<'a> {
     }
 }
 
-fn fold_json<'a, F: Folder<'a>>(json: &'a Value, folder: &mut F) {
+fn fold_json<'a>(json: &'a Value, folder: &mut DiffFolder<'a, '_>) {
     match json {
         Value::Null => folder.on_null(json),
         Value::Bool(_) => folder.on_bool(json),
@@ -344,21 +344,6 @@ fn fold_json<'a, F: Folder<'a>>(json: &'a Value, folder: &mut F) {
         Value::Array(_) => folder.on_array(json),
         Value::Object(_) => folder.on_object(json),
     }
-}
-
-#[allow(unused_variables)]
-trait Folder<'a> {
-    fn on_null(&mut self, json: &'a Value) {}
-
-    fn on_bool(&mut self, bool_json: &'a Value) {}
-
-    fn on_string(&mut self, str_json: &'a Value) {}
-
-    fn on_number(&mut self, number_json: &'a Value) {}
-
-    fn on_array(&mut self, array_json: &'a Value) {}
-
-    fn on_object(&mut self, obj_json: &'a Value) {}
 }
 
 #[cfg(test)]
