@@ -157,7 +157,6 @@
 )]
 #![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
 
-pub use crate::diff::NumericMode;
 use diff::{diff, Mode};
 use serde::Serialize;
 
@@ -332,6 +331,15 @@ where
             .join("\n\n");
         Err(msg)
     }
+}
+
+/// How should numbers be compared.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum NumericMode {
+    /// Different numeric types aren't considered equal.
+    Strict,
+    /// All numeric types are converted to float before comparison.
+    AssumeFloat,
 }
 
 #[cfg(test)]

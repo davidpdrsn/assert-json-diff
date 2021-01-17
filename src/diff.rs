@@ -1,8 +1,9 @@
 use crate::core_ext::{Indent, Indexes};
+use crate::NumericMode;
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub fn diff<'a>(
+pub(crate) fn diff<'a>(
     lhs: &'a Value,
     rhs: &'a Value,
     mode: Mode,
@@ -14,18 +15,9 @@ pub fn diff<'a>(
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Mode {
+pub(crate) enum Mode {
     Lenient,
     Strict,
-}
-
-/// How should numbers be compared.
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum NumericMode {
-    /// Different numeric types aren't considered equal.
-    Strict,
-    /// All numeric types are converted to float before comparison.
-    AssumeFloat,
 }
 
 fn diff_with<'a>(
@@ -233,7 +225,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Difference<'a> {
+pub(crate) struct Difference<'a> {
     path: Path<'a>,
     lhs: Option<&'a Value>,
     rhs: Option<&'a Value>,
