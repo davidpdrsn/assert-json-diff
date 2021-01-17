@@ -2,7 +2,12 @@ use crate::core_ext::{Indent, Indexes};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub fn diff<'a>(lhs: &'a Value, rhs: &'a Value, mode: Mode, num_mode: NumericMode) -> Vec<Difference<'a>> {
+pub fn diff<'a>(
+    lhs: &'a Value,
+    rhs: &'a Value,
+    mode: Mode,
+    num_mode: NumericMode,
+) -> Vec<Difference<'a>> {
     let mut acc = vec![];
     diff_with(lhs, rhs, mode, num_mode, Path::Root, &mut acc);
     acc
@@ -13,7 +18,6 @@ pub enum Mode {
     Lenient,
     Strict,
 }
-
 
 /// How should numbers be compared.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -37,7 +41,7 @@ fn diff_with<'a>(
         path,
         acc,
         mode,
-        num_mode
+        num_mode,
     };
 
     fold_json(lhs, &mut folder);
@@ -49,7 +53,7 @@ struct DiffFolder<'a, 'b> {
     path: Path<'a>,
     acc: &'b mut Vec<Difference<'a>>,
     mode: Mode,
-    num_mode: NumericMode
+    num_mode: NumericMode,
 }
 
 macro_rules! direct_compare {
@@ -61,7 +65,7 @@ macro_rules! direct_compare {
                     rhs: Some(&self.rhs),
                     path: self.path.clone(),
                     mode: self.mode,
-                    num_mode: self.num_mode
+                    num_mode: self.num_mode,
                 });
             }
         }
@@ -76,7 +80,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
     fn on_number(&mut self, lhs: &'a Value) {
         let is_equal = match self.num_mode {
             NumericMode::Strict => self.rhs == lhs,
-            NumericMode::AssumeFloat => self.rhs.as_f64() == lhs.as_f64()
+            NumericMode::AssumeFloat => self.rhs.as_f64() == lhs.as_f64(),
         };
         if !is_equal {
             self.acc.push(Difference {
@@ -84,7 +88,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
                 mode: self.mode,
-                num_mode: self.num_mode
+                num_mode: self.num_mode,
             });
         }
     }
@@ -106,7 +110,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                 rhs: Some(&self.rhs),
                                 path,
                                 mode: self.mode,
-                                num_mode: self.num_mode
+                                num_mode: self.num_mode,
                             });
                         }
                     }
@@ -122,7 +126,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc );
+                                diff_with(lhs, rhs, self.mode, self.num_mode, path, self.acc);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
@@ -130,7 +134,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                     rhs: Some(rhs),
                                     path,
                                     mode: self.mode,
-                                    num_mode: self.num_mode
+                                    num_mode: self.num_mode,
                                 });
                             }
                             (Some(lhs), None) => {
@@ -139,7 +143,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                     rhs: None,
                                     path,
                                     mode: self.mode,
-                                    num_mode: self.num_mode
+                                    num_mode: self.num_mode,
                                 });
                             }
                             (None, None) => {
@@ -155,7 +159,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
                 mode: self.mode,
-                num_mode: self.num_mode
+                num_mode: self.num_mode,
             });
         }
     }
@@ -177,7 +181,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                 rhs: Some(&self.rhs),
                                 path,
                                 mode: self.mode,
-                                num_mode: self.num_mode
+                                num_mode: self.num_mode,
                             });
                         }
                     }
@@ -197,7 +201,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                     rhs: Some(rhs),
                                     path,
                                     mode: self.mode,
-                                    num_mode: self.num_mode
+                                    num_mode: self.num_mode,
                                 });
                             }
                             (Some(lhs), None) => {
@@ -206,7 +210,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                                     rhs: None,
                                     path,
                                     mode: self.mode,
-                                    num_mode: self.num_mode
+                                    num_mode: self.num_mode,
                                 });
                             }
                             (None, None) => {
@@ -222,7 +226,7 @@ impl<'a, 'b> Folder<'a> for DiffFolder<'a, 'b> {
                 rhs: Some(&self.rhs),
                 path: self.path.clone(),
                 mode: self.mode,
-                num_mode: self.num_mode
+                num_mode: self.num_mode,
             });
         }
     }
@@ -234,7 +238,7 @@ pub struct Difference<'a> {
     lhs: Option<&'a Value>,
     rhs: Option<&'a Value>,
     mode: Mode,
-    num_mode: NumericMode
+    num_mode: NumericMode,
 }
 
 impl<'a> fmt::Display for Difference<'a> {
@@ -365,19 +369,44 @@ mod test {
 
     #[test]
     fn test_diffing_leaf_json() {
-        let diffs = diff(&json!(null), &json!(null), Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(
+            &json!(null),
+            &json!(null),
+            Mode::Lenient,
+            NumericMode::Strict,
+        );
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(&json!(false), &json!(false), Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(
+            &json!(false),
+            &json!(false),
+            Mode::Lenient,
+            NumericMode::Strict,
+        );
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(&json!(true), &json!(true), Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(
+            &json!(true),
+            &json!(true),
+            Mode::Lenient,
+            NumericMode::Strict,
+        );
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(&json!(false), &json!(true), Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(
+            &json!(false),
+            &json!(true),
+            Mode::Lenient,
+            NumericMode::Strict,
+        );
         assert_eq!(diffs.len(), 1);
 
-        let diffs = diff(&json!(true), &json!(false), Mode::Lenient, NumericMode::Strict);
+        let diffs = diff(
+            &json!(true),
+            &json!(false),
+            Mode::Lenient,
+            NumericMode::Strict,
+        );
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);

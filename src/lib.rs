@@ -157,9 +157,9 @@
 )]
 #![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
 
+pub use crate::diff::NumericMode;
 use diff::{diff, Mode};
 use serde::Serialize;
-pub use crate::diff::NumericMode;
 
 mod core_ext;
 mod diff;
@@ -175,7 +175,9 @@ macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual = $actual;
         let expected = $expected;
-        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::Strict) {
+        if let Err(error) =
+            $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::Strict)
+        {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -201,7 +203,11 @@ macro_rules! assert_json_include_assume_float {
     (actual: $actual:expr, expected: $expected:expr) => {{
         let actual = $actual;
         let expected = $expected;
-        if let Err(error) = $crate::assert_json_include_no_panic(&actual, &expected, $crate::NumericMode::AssumeFloat) {
+        if let Err(error) = $crate::assert_json_include_no_panic(
+            &actual,
+            &expected,
+            $crate::NumericMode::AssumeFloat,
+        ) {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -226,7 +232,8 @@ macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr) => {{
         let lhs = $lhs;
         let rhs = $rhs;
-        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::Strict) {
+        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::Strict)
+        {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -245,7 +252,9 @@ macro_rules! assert_json_eq_assume_float {
     ($lhs:expr, $rhs:expr) => {{
         let lhs = $lhs;
         let rhs = $rhs;
-        if let Err(error) = $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::AssumeFloat) {
+        if let Err(error) =
+            $crate::assert_json_eq_no_panic(&lhs, &rhs, $crate::NumericMode::AssumeFloat)
+        {
             panic!("\n\n{}\n\n", error);
         }
     }};
@@ -262,7 +271,7 @@ macro_rules! assert_json_eq_assume_float {
 pub fn assert_json_include_no_panic<Actual, Expected>(
     actual: &Actual,
     expected: &Expected,
-    num_mode: NumericMode
+    num_mode: NumericMode,
 ) -> Result<(), String>
 where
     Actual: Serialize,
@@ -276,7 +285,11 @@ where
 /// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
 /// This is might be useful if you want to control how failures are reported and don't want to deal
 /// with panics.
-pub fn assert_json_eq_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs, num_mode: NumericMode) -> Result<(), String>
+pub fn assert_json_eq_no_panic<Lhs, Rhs>(
+    lhs: &Lhs,
+    rhs: &Rhs,
+    num_mode: NumericMode,
+) -> Result<(), String>
 where
     Lhs: Serialize,
     Rhs: Serialize,
@@ -284,7 +297,12 @@ where
     assert_json_no_panic(lhs, rhs, Mode::Strict, num_mode)
 }
 
-fn assert_json_no_panic<Lhs, Rhs>(lhs: &Lhs, rhs: &Rhs, mode: Mode, num_mode: NumericMode) -> Result<(), String>
+fn assert_json_no_panic<Lhs, Rhs>(
+    lhs: &Lhs,
+    rhs: &Rhs,
+    mode: Mode,
+    num_mode: NumericMode,
+) -> Result<(), String>
 where
     Lhs: Serialize,
     Rhs: Serialize,
