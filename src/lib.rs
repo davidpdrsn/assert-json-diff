@@ -138,20 +138,20 @@
 //!
 //! You can use [`assert_json_matches`] to further customize the comparison.
 
-// #![deny(
-//     missing_docs,
-//     unused_imports,
-//     missing_debug_implementations,
-//     missing_copy_implementations,
-//     trivial_casts,
-//     trivial_numeric_casts,
-//     unsafe_code,
-//     unstable_features,
-//     unused_import_braces,
-//     unused_qualifications,
-//     unknown_lints
-// )]
-// #![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
+#![deny(
+    missing_docs,
+    unused_imports,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications,
+    unknown_lints
+)]
+#![doc(html_root_url = "https://docs.rs/assert-json-diff/1.1.0")]
 
 use diff::diff;
 use serde::Serialize;
