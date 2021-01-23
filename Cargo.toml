@@ -13,10 +13,9 @@ documentation = "https://docs.rs/assert-json-diff"
 edition = "2018"
 
 [dependencies]
-serde_json = "1.0.32"
-serde = "1.0.80"
-extend = "0.1.0"
+serde_json = "1"
+serde = "1"
 
 [dev-dependencies]
 version-sync = "0.8"
-serde = { version = "1.0.80", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
