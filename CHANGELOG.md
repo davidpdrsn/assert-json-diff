@@ -6,6 +6,16 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
+None.
+
+### Breaking changes
+
+None.
+
+## 2.0.0 - 2021-01-23
+
+## Unreleased
+
 - A less strict numeric mode for comparisons is now supported. The `AssumeFloat` mode will make `1 == 1.0`. This mode can be set via `Config::numeric_mode`.
 - A panicking `assert_json_matches` macro has been added which takes a `Config`.
 - Remove dependency on "extend".
@@ -16,35 +26,35 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
     - `assert_json_eq_no_panic` and `assert_json_include_no_panic` have been replaced by `assert_json_matches_no_panic` which takes a `Config` that describes how the comparison should work.
     - This setup will support adding further customizations without more breaking changes.
 
-## [1.1.0] - 2020-07-12
+## 1.1.0 - 2020-07-12
 
 - All methods now accept any `T: Serialize` rather than just `serde_json::Value`.
 
-## [1.0.3] - 2020-02-21
+## 1.0.3 - 2020-02-21
 
 - Introduce non-panicking functions with `assert_json_include_no_panic` and `assert_json_eq_no_panic`.
 
-## [1.0.2] - 2020-02-19
+## 1.0.2 - 2020-02-19
 
 - Internal diffing algorithm simplified. There should be no external changes. Some error messages might have changed, but everything that passed/failed before should still do the same.
 
-## [1.0.1] - 2019-10-24
+## 1.0.1 - 2019-10-24
 
 - Update to 2018 edition
 
-## [1.0.0] - 2019-02-15
+## 1.0.0 - 2019-02-15
 
 ### Fixed
 
 - Make macros work with trailing comma
 
-## [0.2.1] - 2018-11-15
+## 0.2.1 - 2018-11-15
 
 ### Fixed
 
 - Fix wrong error message when a JSON atom was missing from actual.
 
-## [0.2.0] - 2018-11-16
+## 0.2.0 - 2018-11-16
 
 ### Added
 
@@ -57,11 +67,3 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ## 0.1.0 - 2018-10-17
 
 Initial release.
-
-[1.1.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.3...1.1.0
-[1.0.3]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.2...1.0.3
-[1.0.2]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.1...1.0.2
-[1.0.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v1.0.0...1.0.1
-[1.0.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.1...1.0.0
-[0.2.1]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.2.0...v0.2.1
-[0.2.0]: https://github.com/davidpdrsn/assert-json-diff/compare/v0.1.0...v0.2.0
