@@ -1,8 +1,8 @@
-use serde::Serialize;
 use assert_json_diff::{
-    assert_json_eq, assert_json_eq_no_panic, assert_json_include, assert_json_include_no_panic, assert_json_eq_assume_float, assert_json_include_assume_float, NumericMode
+    assert_json_eq, assert_json_include, assert_json_matches, assert_json_matches_no_panic,
+    CompareMode, Config, NumericMode,
 };
-
+use serde::Serialize;
 use serde_json::json;
 
 #[test]
@@ -59,12 +59,10 @@ fn different_numeric_types_eq_should_fail() {
 fn different_numeric_types_assume_float() {
     let actual = json!({ "a": { "b": true }, "c": [true, null, 1] });
     let expected = json!({ "a": { "b": true }, "c": [true, null, 1.0] });
-    assert_json_include_assume_float!(
-        actual: &actual,
-        expected: &expected
-    );
+    let config = Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat);
+    assert_json_matches!(&actual, &expected, config.clone());
 
-    assert_json_eq_assume_float!(actual, expected)
+    assert_json_matches!(actual, expected, config.compare_mode(CompareMode::Strict))
 }
 
 #[test]
@@ -80,23 +78,43 @@ fn can_fail_with_exact_match() {
 }
 
 #[test]
-fn inclusive_match_without_panicing() {
-    assert!(assert_json_include_no_panic(&json!({ "a": 1, "b": 2 }), &json!({ "b": 2}), NumericMode::Strict).is_ok());
+fn inclusive_match_without_panicking() {
+    assert!(assert_json_matches_no_panic(
+        &json!({ "a": 1, "b": 2 }),
+        &json!({ "b": 2}),
+        Config::new(CompareMode::Inclusive,).numeric_mode(NumericMode::Strict),
+    )
+    .is_ok());
 
-    assert!(assert_json_include_no_panic(&json!({ "a": 1, "b": 2 }), &json!("foo"), NumericMode::Strict).is_err());
+    assert!(assert_json_matches_no_panic(
+        &json!({ "a": 1, "b": 2 }),
+        &json!("foo"),
+        Config::new(CompareMode::Inclusive,).numeric_mode(NumericMode::Strict),
+    )
+    .is_err());
 }
 
 #[test]
-fn exact_match_without_panicing() {
-    assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!([1, 2, 3]), NumericMode::Strict).is_ok());
+fn exact_match_without_panicking() {
+    assert!(assert_json_matches_no_panic(
+        &json!([1, 2, 3]),
+        &json!([1, 2, 3]),
+        Config::new(CompareMode::Strict).numeric_mode(NumericMode::Strict)
+    )
+    .is_ok());
 
-    assert!(assert_json_eq_no_panic(&json!([1, 2, 3]), &json!("foo"), NumericMode::Strict).is_err());
+    assert!(assert_json_matches_no_panic(
+        &json!([1, 2, 3]),
+        &json!("foo"),
+        Config::new(CompareMode::Strict).numeric_mode(NumericMode::Strict)
+    )
+    .is_err());
 }
 
 #[derive(Serialize)]
 struct User {
     id: i32,
-    username: String
+    username: String,
 }
 
 #[test]
@@ -125,10 +143,10 @@ fn include_with_serializable_ref() {
 
     assert_json_include!(
         actual: &json!({
-            "id": 1,
-            "username": "bob",
-            "email": "bob@example.com"
-        }),
+             "id": 1,
+             "username": "bob",
+             "email": "bob@example.com"
+         }),
         expected: &user,
     );
 }

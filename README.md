@@ -22,47 +22,45 @@ If you want to assert that one JSON value is "included" in another use
 use assert_json_diff::assert_json_include;
 use serde_json::json;
 
-fn main() {
-    let a = json!({
-        "data": {
-            "users": [
-                {
-                    "id": 1,
-                    "country": {
-                        "name": "Denmark"
-                    }
-                },
-                {
-                    "id": 24,
-                    "country": {
-                        "name": "Denmark"
-                    }
+let a = json!({
+    "data": {
+        "users": [
+            {
+                "id": 1,
+                "country": {
+                    "name": "Denmark"
                 }
-            ]
-        }
-    });
-
-    let b = json!({
-        "data": {
-            "users": [
-                {
-                    "id": 1,
-                    "country": {
-                        "name": "Sweden"
-                    }
-                },
-                {
-                    "id": 2,
-                    "country": {
-                        "name": "Denmark"
-                    }
+            },
+            {
+                "id": 24,
+                "country": {
+                    "name": "Denmark"
                 }
-            ]
-        }
-    });
+            }
+        ]
+    }
+});
 
-    assert_json_include!(actual: a, expected: b)
-}
+let b = json!({
+    "data": {
+        "users": [
+            {
+                "id": 1,
+                "country": {
+                    "name": "Sweden"
+                }
+            },
+            {
+                "id": 2,
+                "country": {
+                    "name": "Denmark"
+                }
+            }
+        ]
+    }
+});
+
+assert_json_include!(actual: a, expected: b)
 ```
 
 This will panic with the error message:
@@ -88,16 +86,14 @@ of the JSON without having to specify the whole thing. For example this test pas
 use assert_json_diff::assert_json_include;
 use serde_json::json;
 
-fn main() {
-    assert_json_include!(
-        actual: json!({
-            "a": { "b": 1 },
-        }),
-        expected: json!({
-            "a": {},
-        })
-    )
-}
+assert_json_include!(
+    actual: json!({
+        "a": { "b": 1 },
+    }),
+    expected: json!({
+        "a": {},
+    })
+)
 ```
 
 However `expected` cannot contain additional data so this test fails:
@@ -106,16 +102,14 @@ However `expected` cannot contain additional data so this test fails:
 use assert_json_diff::assert_json_include;
 use serde_json::json;
 
-fn main() {
-    assert_json_include!(
-        actual: json!({
-            "a": {},
-        }),
-        expected: json!({
-            "a": { "b": 1 },
-        })
-    )
-}
+assert_json_include!(
+    actual: json!({
+        "a": {},
+    }),
+    expected: json!({
+        "a": { "b": 1 },
+    })
+)
 ```
 
 That will print
@@ -132,12 +126,10 @@ If you want to ensure two JSON values are *exactly* the same, use [`assert_json_
 use assert_json_diff::assert_json_eq;
 use serde_json::json;
 
-fn main() {
-    assert_json_eq!(
-        json!({ "a": { "b": 1 } }),
-        json!({ "a": {} })
-    )
-}
+assert_json_eq!(
+    json!({ "a": { "b": 1 } }),
+    json!({ "a": {} })
+)
 ```
 
 This will panic with the error message:
@@ -145,5 +137,9 @@ This will panic with the error message:
 ```
 json atom at path ".a.b" is missing from lhs
 ```
+
+### Further customization
+
+You can use [`assert_json_matches`] to further customize the comparison.
 
 License: MIT

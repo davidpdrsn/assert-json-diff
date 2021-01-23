@@ -6,11 +6,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ## Unreleased
 
-None.
+- A less strict numeric mode for comparisons is now supported. The `AssumeFloat` mode will make `1 == 1.0`. This mode can be set via `Config::numeric_mode`.
+- A panicking `assert_json_matches` macro has been added which takes a `Config`.
 
 ### Breaking changes
 
-None.
+- Some breaking changes have been made to support customizing how the JSON values are compared:
+    - `assert_json_eq_no_panic` and `assert_json_include_no_panic` have been replaced by `assert_json_matches_no_panic` which takes a `Config` that describes how the comparison should work.
+    - This setup will support adding further customizations without more breaking changes.
 
 ## [1.1.0] - 2020-07-12
 

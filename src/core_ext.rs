@@ -1,6 +1,6 @@
 use extend::ext;
 
-#[ext(pub, name = Indent)]
+#[ext(pub(crate), name = Indent)]
 impl<T> T
 where
     T: ToString,
@@ -8,7 +8,7 @@ where
     fn indent(&self, level: u32) -> String {
         let mut indent = String::new();
         for _ in 0..level {
-            indent.push_str(" ");
+            indent.push(' ');
         }
 
         self.to_string()
@@ -19,7 +19,7 @@ where
     }
 }
 
-#[ext(pub, name = Indexes)]
+#[ext(pub(crate), name = Indexes)]
 impl<T> Vec<T> {
     fn indexes(&self) -> Vec<usize> {
         if self.is_empty() {
