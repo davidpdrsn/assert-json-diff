@@ -8,6 +8,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 - A less strict numeric mode for comparisons is now supported. The `AssumeFloat` mode will make `1 == 1.0`. This mode can be set via `Config::numeric_mode`.
 - A panicking `assert_json_matches` macro has been added which takes a `Config`.
+- Remove dependency on "extend".
 
 ### Breaking changes
 
