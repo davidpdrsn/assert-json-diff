@@ -302,7 +302,7 @@ where
 }
 
 /// Configuration for how JSON values should be compared.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[allow(missing_copy_implementations)]
 pub struct Config {
     pub(crate) compare_mode: CompareMode,
@@ -336,7 +336,7 @@ impl Config {
 }
 
 /// Mode for how JSON values should be compared.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum CompareMode {
     /// The two JSON values don't have to be exactly equal. The "actual" value is only required to
     /// be "contained" inside "expected". See [crate documentation](index.html) for examples.
@@ -350,7 +350,7 @@ pub enum CompareMode {
 }
 
 /// How should numbers be compared.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum NumericMode {
     /// Different numeric types aren't considered equal.
     Strict,
