@@ -202,8 +202,33 @@ macro_rules! assert_json_eq {
 /// };
 /// use serde_json::json;
 ///
-/// let config = Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat);
+/// let config = Config::new(CompareMode::Strict).numeric_mode(NumericMode::AssumeFloat);
 ///
+/// assert_json_matches!(
+///     json!({
+///         "a": { "b": [1, 2, 3.0] },
+///     }),
+///     json!({
+///         "a": { "b": [1, 2.0, 3] },
+///     }),
+///     config,
+/// )
+/// ```
+///
+/// When using `CompareMode::Inclusive` the first argument is `actual` and the second argument is
+/// `expected`. Example:
+///
+/// ```
+/// # use assert_json_diff::{
+/// #     CompareMode,
+/// #     Config,
+/// #     NumericMode,
+/// #     assert_json_matches,
+/// #     assert_json_include,
+/// # };
+/// # use serde_json::json;
+/// #
+/// // This
 /// assert_json_matches!(
 ///     json!({
 ///         "a": { "b": 1 },
@@ -211,8 +236,18 @@ macro_rules! assert_json_eq {
 ///     json!({
 ///         "a": {},
 ///     }),
-///     config,
-/// )
+///     Config::new(CompareMode::Inclusive),
+/// );
+///
+/// // Is the same as this
+/// assert_json_include!(
+///     actual: json!({
+///         "a": { "b": 1 },
+///     }),
+///     expected: json!({
+///         "a": {},
+///     }),
+/// );
 /// ```
 #[macro_export]
 macro_rules! assert_json_matches {
@@ -303,9 +338,8 @@ impl Config {
 /// Mode for how JSON values should be compared.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum CompareMode {
-    /// The two JSON values don't have to be exactly equal. The "actual" value must is only
-    /// required to be "contained" inside "expected". See [crate documentation](index.html) for
-    /// examples.
+    /// The two JSON values don't have to be exactly equal. The "actual" value is only required to
+    /// be "contained" inside "expected". See [crate documentation](index.html) for examples.
     ///
     /// The mode used with [`assert_json_include`].
     Inclusive,
