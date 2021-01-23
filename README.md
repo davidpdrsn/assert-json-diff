@@ -1,4 +1,7 @@
-[![Build Status](https://travis-ci.org/davidpdrsn/assert-json-diff.svg?branch=master)](https://travis-ci.org/davidpdrsn/assert-json-diff)
+[![Crates.io](https://img.shields.io/crates/v/assert-json-diff.svg)](https://crates.io/crates/assert-json-diff)
+[![Docs](https://docs.rs/assert-json-diff/badge.svg)](https://docs.rs/assert-json-diff)
+[![dependency status](https://deps.rs/repo/github/davidpdrsn/assert-json-diff/status.svg)](https://deps.rs/repo/github/davidpdrsn/assert-json-diff)
+[![Build status](https://github.com/davidpdrsn/assert-json-diff/workflows/CI/badge.svg)](https://github.com/davidpdrsn/assert-json-diff/actions)
 
 # assert-json-diff
 
