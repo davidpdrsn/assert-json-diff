@@ -12,6 +12,10 @@ None.
 
 None.
 
+## 2.0.1 - 2021-02-14
+
+- Add maintenance status to readme and `Cargo.toml`.
+
 ## 2.0.0 - 2021-01-23
 
 ## Unreleased
