@@ -19,3 +19,6 @@ serde = "1"
 [dev-dependencies]
 version-sync = "0.8"
 serde = { version = "1", features = ["derive"] }
+
+[badges]
+maintenance = { status = "passively-maintained" }

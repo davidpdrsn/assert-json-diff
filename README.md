@@ -2,6 +2,7 @@
 [![Docs](https://docs.rs/assert-json-diff/badge.svg)](https://docs.rs/assert-json-diff)
 [![dependency status](https://deps.rs/repo/github/davidpdrsn/assert-json-diff/status.svg)](https://deps.rs/repo/github/davidpdrsn/assert-json-diff)
 [![Build status](https://github.com/davidpdrsn/assert-json-diff/workflows/CI/badge.svg)](https://github.com/davidpdrsn/assert-json-diff/actions)
+![maintenance-status](https://img.shields.io/badge/maintenance-passively--maintained-yellowgreen.svg)
 
 # assert-json-diff
 
