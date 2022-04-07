@@ -167,11 +167,8 @@ mod diff;
 #[macro_export]
 macro_rules! assert_json_include {
     (actual: $actual:expr, expected: $expected:expr $(,)?) => {{
-        $crate::assert_json_matches!(
-            $actual,
-            $expected,
-            $crate::Config::new($crate::CompareMode::Inclusive)
-        )
+        let config = $crate::Config::new($crate::CompareMode::Inclusive);
+        $crate::assert_json_matches!($actual, $expected, &config)
     }};
     (expected: $expected:expr, actual: $actual:expr $(,)?) => {{
         $crate::assert_json_include!(actual: $actual, expected: $expected)
@@ -186,7 +183,8 @@ macro_rules! assert_json_include {
 #[macro_export]
 macro_rules! assert_json_eq {
     ($lhs:expr, $rhs:expr $(,)?) => {{
-        $crate::assert_json_matches!($lhs, $rhs, $crate::Config::new($crate::CompareMode::Strict))
+        let config = $crate::Config::new($crate::CompareMode::Strict);
+        $crate::assert_json_matches!($lhs, $rhs, &config)
     }};
 }
 
@@ -210,7 +208,7 @@ macro_rules! assert_json_eq {
 ///     json!({
 ///         "a": { "b": [1, 2.0, 3] },
 ///     }),
-///     config,
+///     &config,
 /// )
 /// ```
 ///
@@ -228,6 +226,7 @@ macro_rules! assert_json_eq {
 /// # use serde_json::json;
 /// #
 /// // This
+/// let config = Config::new(CompareMode::Inclusive);
 /// assert_json_matches!(
 ///     json!({
 ///         "a": { "b": 1 },
@@ -235,7 +234,7 @@ macro_rules! assert_json_eq {
 ///     json!({
 ///         "a": {},
 ///     }),
-///     Config::new(CompareMode::Inclusive),
+///     &config,
 /// );
 ///
 /// // Is the same as this
@@ -265,7 +264,7 @@ macro_rules! assert_json_matches {
 pub fn assert_json_matches_no_panic<Lhs, Rhs>(
     lhs: &Lhs,
     rhs: &Rhs,
-    config: Config,
+    config: &Config,
 ) -> Result<(), String>
 where
     Lhs: Serialize,
@@ -651,10 +650,10 @@ mod tests {
     }
 
     fn test_partial_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_matches_no_panic(&lhs, &rhs, Config::new(CompareMode::Inclusive))
+        assert_json_matches_no_panic(&lhs, &rhs, &Config::new(CompareMode::Inclusive))
     }
 
     fn test_exact_match(lhs: Value, rhs: Value) -> Result<(), String> {
-        assert_json_matches_no_panic(&lhs, &rhs, Config::new(CompareMode::Strict))
+        assert_json_matches_no_panic(&lhs, &rhs, &Config::new(CompareMode::Strict))
     }
 }
