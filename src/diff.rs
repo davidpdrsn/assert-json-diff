@@ -1,5 +1,5 @@
 use crate::core_ext::{Indent, Indexes};
-use crate::{CompareMode, Config, NumericMode};
+use crate::{ArraySortingMode, CompareMode, Config, NumericMode};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
@@ -69,7 +69,46 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         }
     }
 
+    fn on_array_contains(&mut self, lhs: &'a Value) {
+        if let Some(rhs) = self.rhs.as_array() {
+            let lhs_array = lhs.as_array().unwrap();
+
+            for rhs_item in rhs.iter() {
+                // research number of repeated items in rhs for this item
+                let rhs_item_count = rhs
+                    .iter()
+                    .filter(|i| diff(rhs_item, i, self.config).len() == 0)
+                    .count();
+                // now, make sure that lhs has at least as many items matching this item
+                let lhs_matching_items_count = lhs_array
+                    .iter()
+                    .filter(|lhs_item| diff(rhs_item, lhs_item, self.config).len() == 0)
+                    .count();
+                if lhs_matching_items_count < rhs_item_count {
+                    self.acc.push(Difference {
+                        lhs: Some(lhs),
+                        rhs: Some(&self.rhs),
+                        path: self.path.clone(),
+                        config: self.config.clone(),
+                    });
+                    break;
+                }
+            }
+        } else {
+            self.acc.push(Difference {
+                lhs: Some(lhs),
+                rhs: Some(&self.rhs),
+                path: self.path.clone(),
+                config: self.config.clone(),
+            });
+        }
+    }
+
     fn on_array(&mut self, lhs: &'a Value) {
+        if self.config.array_sorting_mode == ArraySortingMode::Ignore {
+            return self.on_array_contains(lhs);
+        }
+
         if let Some(rhs) = self.rhs.as_array() {
             let lhs = lhs.as_array().unwrap();
 
