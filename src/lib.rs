@@ -155,6 +155,7 @@
 
 use diff::diff;
 use serde::Serialize;
+use serde_json::Value;
 
 mod core_ext;
 mod diff;
@@ -287,6 +288,21 @@ where
         )
     });
 
+    assert_json_value_matches_no_panic(&lhs, &rhs, config)
+}
+
+
+/// Compares two JSON values without panicking.
+///
+/// Instead it returns a `Result` where the error is the message that would be passed to `panic!`.
+/// This is might be useful if you want to control how failures are reported and don't want to deal
+/// with panics.
+pub fn assert_json_value_matches_no_panic(
+    lhs: &Value,
+    rhs: &Value,
+    config: Config,
+) -> Result<(), String>
+{
     let diffs = diff(&lhs, &rhs, config);
 
     if diffs.is_empty() {
