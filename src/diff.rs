@@ -20,10 +20,16 @@ fn diff_with<'a>(
         rhs,
         path,
         acc,
+        queue: &mut Vec::new(),
         config,
     };
 
     fold_json(lhs, &mut folder);
+    while let Some(e) = folder.queue.pop() {
+        folder.rhs = e.rhs;
+        folder.path = e.path.clone();
+        fold_json(e.lhs, &mut folder);
+    }
 }
 
 #[derive(Debug)]
@@ -31,7 +37,15 @@ struct DiffFolder<'a, 'b> {
     rhs: &'a Value,
     path: Path<'a>,
     acc: &'b mut Vec<Difference<'a>>,
+    queue: &'b mut Vec<QueuedItem<'a>>,
     config: Config,
+}
+
+#[derive(Debug)]
+struct QueuedItem<'a> {
+    lhs: &'a Value,
+    rhs: &'a Value,
+    path: Path<'a>,
 }
 
 macro_rules! direct_compare {
@@ -53,6 +67,10 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
     direct_compare!(on_null);
     direct_compare!(on_bool);
     direct_compare!(on_string);
+
+    fn queue(&mut self, lhs: &'a Value, rhs: &'a Value, path: Path<'a>) {
+        self.queue.push(QueuedItem { lhs, rhs, path });
+    }
 
     fn on_number(&mut self, lhs: &'a Value) {
         let is_equal = match self.config.numeric_mode {
@@ -79,7 +97,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         let path = self.path.append(Key::Idx(idx));
 
                         if let Some(lhs) = lhs.get(idx) {
-                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
+                            self.queue(lhs, rhs, path);
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
@@ -101,7 +119,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
+                                self.queue(lhs, rhs, path);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
@@ -146,7 +164,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         let path = self.path.append(Key::Field(key));
 
                         if let Some(lhs) = lhs.get(key) {
-                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
+                            self.queue(lhs, rhs, path);
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
@@ -164,7 +182,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
+                                self.queue(lhs, rhs, path);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
