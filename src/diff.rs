@@ -80,7 +80,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         if !is_equal {
             self.acc.push(Difference {
                 lhs: Some(lhs),
-                rhs: Some(&self.rhs),
+                rhs: Some(self.rhs),
                 path: self.path.clone(),
                 config: self.config.clone(),
             });
@@ -101,7 +101,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
-                                rhs: Some(&self.rhs),
+                                rhs: Some(self.rhs),
                                 path,
                                 config: self.config.clone(),
                             });
@@ -147,7 +147,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         } else {
             self.acc.push(Difference {
                 lhs: Some(lhs),
-                rhs: Some(&self.rhs),
+                rhs: Some(self.rhs),
                 path: self.path.clone(),
                 config: self.config.clone(),
             });
@@ -168,7 +168,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
-                                rhs: Some(&self.rhs),
+                                rhs: Some(self.rhs),
                                 path,
                                 config: self.config.clone(),
                             });
@@ -210,7 +210,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         } else {
             self.acc.push(Difference {
                 lhs: Some(lhs),
-                rhs: Some(&self.rhs),
+                rhs: Some(self.rhs),
                 path: self.path.clone(),
                 config: self.config.clone(),
             });

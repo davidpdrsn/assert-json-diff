@@ -1,5 +1,5 @@
 [package]
-version = "2.0.1" # remember to update html_root_url
+version = "2.0.2"
 authors = ["David Pedersen <david.pdrsn@gmail.com>"]
 categories = ["development-tools"]
 description = "Easily compare two JSON values and get great output"
