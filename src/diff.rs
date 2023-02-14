@@ -3,7 +3,7 @@ use crate::{CompareMode, Config, NumericMode};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
+pub fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
     let mut acc = vec![];
     diff_with(lhs, rhs, config, Path::Root, &mut acc);
     acc
@@ -201,8 +201,8 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 }
 
 #[derive(Debug, PartialEq)]
-pub(crate) struct Difference<'a> {
-    path: Path<'a>,
+pub struct Difference<'a> {
+    pub path: Path<'a>,
     lhs: Option<&'a Value>,
     rhs: Option<&'a Value>,
     config: Config,
@@ -253,7 +253,7 @@ impl<'a> fmt::Display for Difference<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum Path<'a> {
+pub enum Path<'a> {
     Root,
     Keys(Vec<Key<'a>>),
 }
@@ -286,7 +286,7 @@ impl<'a> fmt::Display for Path<'a> {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Key<'a> {
+pub enum Key<'a> {
     Idx(usize),
     Field(&'a str),
 }

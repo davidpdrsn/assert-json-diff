@@ -156,7 +156,7 @@ use diff::diff;
 use serde::Serialize;
 
 mod core_ext;
-mod diff;
+pub mod diff;
 
 /// Compare two JSON values for an inclusive match.
 ///
