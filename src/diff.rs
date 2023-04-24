@@ -1,9 +1,9 @@
 use crate::core_ext::{Indent, Indexes};
-use crate::{CompareMode, Config, NumericMode};
+use crate::{ArraySortingMode, CompareMode, Config, NumericMode};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
+pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: &'a Config) -> Vec<Difference<'a>> {
     let mut acc = vec![];
     diff_with(lhs, rhs, config, Path::Root, &mut acc);
     acc
@@ -12,7 +12,7 @@ pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Di
 fn diff_with<'a>(
     lhs: &'a Value,
     rhs: &'a Value,
-    config: Config,
+    config: &'a Config,
     path: Path<'a>,
     acc: &mut Vec<Difference<'a>>,
 ) {
@@ -31,7 +31,7 @@ struct DiffFolder<'a, 'b> {
     rhs: &'a Value,
     path: Path<'a>,
     acc: &'b mut Vec<Difference<'a>>,
-    config: Config,
+    config: &'a Config,
 }
 
 macro_rules! direct_compare {
@@ -69,7 +69,46 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
         }
     }
 
+    fn on_array_contains(&mut self, lhs: &'a Value) {
+        if let Some(rhs) = self.rhs.as_array() {
+            let lhs_array = lhs.as_array().unwrap();
+
+            for rhs_item in rhs.iter() {
+                // research number of repeated items in rhs for this item
+                let rhs_item_count = rhs
+                    .iter()
+                    .filter(|i| diff(rhs_item, i, self.config).len() == 0)
+                    .count();
+                // now, make sure that lhs has at least as many items matching this item
+                let lhs_matching_items_count = lhs_array
+                    .iter()
+                    .filter(|lhs_item| diff(rhs_item, lhs_item, self.config).len() == 0)
+                    .count();
+                if lhs_matching_items_count < rhs_item_count {
+                    self.acc.push(Difference {
+                        lhs: Some(lhs),
+                        rhs: Some(&self.rhs),
+                        path: self.path.clone(),
+                        config: self.config.clone(),
+                    });
+                    break;
+                }
+            }
+        } else {
+            self.acc.push(Difference {
+                lhs: Some(lhs),
+                rhs: Some(&self.rhs),
+                path: self.path.clone(),
+                config: self.config.clone(),
+            });
+        }
+    }
+
     fn on_array(&mut self, lhs: &'a Value) {
+        if self.config.array_sorting_mode == ArraySortingMode::Ignore {
+            return self.on_array_contains(lhs);
+        }
+
         if let Some(rhs) = self.rhs.as_array() {
             let lhs = lhs.as_array().unwrap();
 
@@ -79,7 +118,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         let path = self.path.append(Key::Idx(idx));
 
                         if let Some(lhs) = lhs.get(idx) {
-                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
+                            diff_with(lhs, rhs, self.config, path, self.acc)
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
@@ -101,7 +140,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
+                                diff_with(lhs, rhs, self.config, path, self.acc);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
@@ -146,7 +185,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
                         let path = self.path.append(Key::Field(key));
 
                         if let Some(lhs) = lhs.get(key) {
-                            diff_with(lhs, rhs, self.config.clone(), path, self.acc)
+                            diff_with(lhs, rhs, self.config, path, self.acc)
                         } else {
                             self.acc.push(Difference {
                                 lhs: None,
@@ -164,7 +203,7 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
 
                         match (lhs.get(key), rhs.get(key)) {
                             (Some(lhs), Some(rhs)) => {
-                                diff_with(lhs, rhs, self.config.clone(), path, self.acc);
+                                diff_with(lhs, rhs, self.config, path, self.acc);
                             }
                             (None, Some(rhs)) => {
                                 self.acc.push(Difference {
@@ -319,214 +358,193 @@ mod test {
 
     #[test]
     fn test_diffing_leaf_json() {
-        let diffs = diff(
-            &json!(null),
-            &json!(null),
-            Config::new(CompareMode::Inclusive),
-        );
+        let config = Config::new(CompareMode::Inclusive);
+        let diffs = diff(&json!(null), &json!(null), &config);
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(
-            &json!(false),
-            &json!(false),
-            Config::new(CompareMode::Inclusive),
-        );
+        let diffs = diff(&json!(false), &json!(false), &config);
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(
-            &json!(true),
-            &json!(true),
-            Config::new(CompareMode::Inclusive),
-        );
+        let diffs = diff(&json!(true), &json!(true), &config);
         assert_eq!(diffs, vec![]);
 
-        let diffs = diff(
-            &json!(false),
-            &json!(true),
-            Config::new(CompareMode::Inclusive),
-        );
+        let diffs = diff(&json!(false), &json!(true), &config);
         assert_eq!(diffs.len(), 1);
 
-        let diffs = diff(
-            &json!(true),
-            &json!(false),
-            Config::new(CompareMode::Inclusive),
-        );
+        let diffs = diff(&json!(true), &json!(false), &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!(2);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1);
         let expected = json!(2);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1.0);
         let expected = json!(1.0);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!(1);
         let expected = json!(1.0);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!(1.0);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
+
+        let config_assume_float = config.numeric_mode(NumericMode::AssumeFloat);
 
         let actual = json!(1);
         let expected = json!(1.0);
-        let diffs = diff(
-            &actual,
-            &expected,
-            Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat),
-        );
+        let diffs = diff(&actual, &expected, &config_assume_float);
         assert_eq!(diffs, vec![]);
 
         let actual = json!(1.0);
         let expected = json!(1);
-        let diffs = diff(
-            &actual,
-            &expected,
-            Config::new(CompareMode::Inclusive).numeric_mode(NumericMode::AssumeFloat),
-        );
+        let diffs = diff(&actual, &expected, &config_assume_float);
         assert_eq!(diffs, vec![]);
     }
 
     #[test]
     fn test_diffing_array() {
+        let config = Config::new(CompareMode::Inclusive);
         // empty
         let actual = json!([]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!([1]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         // eq
         let actual = json!([1]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         // actual longer
         let actual = json!([1, 2]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         // expected longer
         let actual = json!([1]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         // eq length but different
         let actual = json!([1, 3]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         // different types
         let actual = json!(1);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!([1]);
         let expected = json!(1);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
     }
 
     #[test]
     fn test_array_strict() {
+        let config = Config::new(CompareMode::Strict);
         let actual = json!([]);
         let expected = json!([]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([1, 2]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 0);
 
         let actual = json!([1]);
         let expected = json!([1, 2]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!([1, 2]);
         let expected = json!([1]);
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Strict));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
     }
 
     #[test]
     fn test_object() {
+        let config = Config::new(CompareMode::Inclusive);
         let actual = json!({});
         let expected = json!({});
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "a": 1 });
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1, "b": 123 });
         let expected = json!({ "a": 1 });
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "b": 1 });
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!({ "a": 1 });
         let expected = json!({ "a": 2 });
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs.len(), 1);
 
         let actual = json!({ "a": { "b": true } });
         let expected = json!({ "a": {} });
-        let diffs = diff(&actual, &expected, Config::new(CompareMode::Inclusive));
+        let diffs = diff(&actual, &expected, &config);
         assert_eq!(diffs, vec![]);
     }
 
     #[test]
     fn test_object_strict() {
+        let config = Config::new(CompareMode::Strict);
         let lhs = json!({});
         let rhs = json!({ "a": 1 });
-        let diffs = diff(&lhs, &rhs, Config::new(CompareMode::Strict));
+        let diffs = diff(&lhs, &rhs, &config);
         assert_eq!(diffs.len(), 1);
 
         let lhs = json!({ "a": 1 });
         let rhs = json!({});
-        let diffs = diff(&lhs, &rhs, Config::new(CompareMode::Strict));
+        let diffs = diff(&lhs, &rhs, &config);
         assert_eq!(diffs.len(), 1);
 
         let json = json!({ "a": 1 });
-        let diffs = diff(&json, &json, Config::new(CompareMode::Strict));
+        let diffs = diff(&json, &json, &config);
         assert_eq!(diffs, vec![]);
     }
 }
