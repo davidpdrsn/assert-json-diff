@@ -1,6 +1,6 @@
 use assert_json_diff::{
     assert_json_eq, assert_json_include, assert_json_matches, assert_json_matches_no_panic,
-    CompareMode, Config, NumericMode,
+    CompareMode, Config, FloatCompareMode, NumericMode,
 };
 use serde::Serialize;
 use serde_json::json;
@@ -180,5 +180,81 @@ fn eq_with_serializable_ref() {
             "username": "bob"
         }),
         &user,
+    );
+}
+
+#[derive(Serialize)]
+struct Person {
+    name: String,
+    height: f64,
+}
+
+#[test]
+fn can_pass_with_exact_float_comparison() {
+    let person = Person {
+        name: "bob".to_string(),
+        height: 1.79,
+    };
+
+    assert_json_matches!(
+        &json!({
+            "name": "bob",
+            "height": 1.79
+        }),
+        &person,
+        Config::new(CompareMode::Strict).float_compare_mode(FloatCompareMode::Exact)
+    );
+}
+
+#[test]
+#[should_panic]
+fn can_fail_with_exact_float_comparison() {
+    let person = Person {
+        name: "bob".to_string(),
+        height: 1.79,
+    };
+
+    assert_json_matches!(
+        &json!({
+            "name": "bob",
+            "height": 1.7900001
+        }),
+        &person,
+        Config::new(CompareMode::Strict).float_compare_mode(FloatCompareMode::Exact)
+    );
+}
+
+#[test]
+fn can_pass_with_epsilon_based_float_comparison() {
+    let person = Person {
+        name: "bob".to_string(),
+        height: 1.79,
+    };
+
+    assert_json_matches!(
+        &json!({
+            "name": "bob",
+            "height": 1.7900001
+        }),
+        &person,
+        Config::new(CompareMode::Strict).float_compare_mode(FloatCompareMode::Epsilon(0.00001))
+    );
+}
+
+#[test]
+#[should_panic]
+fn can_fail_with_epsilon_based_float_comparison() {
+    let person = Person {
+        name: "bob".to_string(),
+        height: 1.79,
+    };
+
+    assert_json_matches!(
+        &json!({
+            "name": "bob",
+            "height": 1.7901
+        }),
+        &person,
+        Config::new(CompareMode::Strict).float_compare_mode(FloatCompareMode::Epsilon(0.00001))
     );
 }
