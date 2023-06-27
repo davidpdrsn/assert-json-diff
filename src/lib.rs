@@ -299,11 +299,12 @@ where
 }
 
 /// Configuration for how JSON values should be compared.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 #[allow(missing_copy_implementations)]
 pub struct Config {
     pub(crate) compare_mode: CompareMode,
     pub(crate) numeric_mode: NumericMode,
+    float_compare_mode: FloatCompareMode,
 }
 
 impl Config {
@@ -314,6 +315,7 @@ impl Config {
         Self {
             compare_mode,
             numeric_mode: NumericMode::Strict,
+            float_compare_mode: FloatCompareMode::Exact,
         }
     }
 
@@ -328,6 +330,14 @@ impl Config {
     /// Change the config's compare mode.
     pub fn compare_mode(mut self, compare_mode: CompareMode) -> Self {
         self.compare_mode = compare_mode;
+        self
+    }
+
+    /// Change the config's float compare mode.
+    ///
+    /// The default `float_compare_mode` is [`FloatCompareMode::Exact`].
+    pub fn float_compare_mode(mut self, float_compare_mode: FloatCompareMode) -> Self {
+        self.float_compare_mode = float_compare_mode;
         self
     }
 }
@@ -354,6 +364,17 @@ pub enum NumericMode {
     /// All numeric types are converted to float before comparison.
     AssumeFloat,
 }
+
+/// How should floating point numbers be compared.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum FloatCompareMode {
+    /// Different floats are never considered equal.
+    Exact,
+    /// Floats are considered equal if they differ by at most this epsilon value.
+    Epsilon(f64),
+}
+
+impl Eq for FloatCompareMode {}
 
 #[cfg(test)]
 mod tests {
