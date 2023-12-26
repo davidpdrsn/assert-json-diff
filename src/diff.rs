@@ -3,7 +3,8 @@ use crate::{CompareMode, Config, NumericMode};
 use serde_json::Value;
 use std::{collections::HashSet, fmt};
 
-pub(crate) fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
+/// Compare two json values and return a list of differences.
+pub fn diff<'a>(lhs: &'a Value, rhs: &'a Value, config: Config) -> Vec<Difference<'a>> {
     let mut acc = vec![];
     diff_with(lhs, rhs, config, Path::Root, &mut acc);
     acc
@@ -200,8 +201,9 @@ impl<'a, 'b> DiffFolder<'a, 'b> {
     }
 }
 
+/// A difference between two json values.
 #[derive(Debug, PartialEq)]
-pub(crate) struct Difference<'a> {
+pub struct Difference<'a> {
     path: Path<'a>,
     lhs: Option<&'a Value>,
     rhs: Option<&'a Value>,
