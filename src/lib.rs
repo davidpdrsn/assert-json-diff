@@ -152,7 +152,7 @@
     unknown_lints
 )]
 
-use diff::diff;
+pub use diff::{diff, Difference};
 use serde::Serialize;
 
 mod core_ext;
